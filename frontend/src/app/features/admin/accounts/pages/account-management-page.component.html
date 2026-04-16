@@ -1,0 +1,209 @@
+<section class="dashboard-page">
+  <div class="dashboard-page-heading">
+    <p class="dashboard-page-eyebrow">Account</p>
+    <h2>Account Management</h2>
+  </div>
+
+  <article class="dashboard-table-card">
+    <div class="dashboard-toolbar">
+      <label class="dashboard-search-field">
+        <span>Search</span>
+        <input
+          type="search"
+          [ngModel]="searchValue()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Search by name, username, or phone"
+        />
+      </label>
+
+      <label class="dashboard-select-field">
+        <span>Role</span>
+        <select [ngModel]="selectedRole()" (ngModelChange)="onRoleChange($event)">
+          @for (option of roleOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+
+      @if (canCreateAdmin()) {
+        <div class="dashboard-toolbar-action">
+          <button type="button" class="dashboard-primary-button" (click)="openAddAdminDialog()">
+            Add Admin
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (successMessage()) {
+      <p class="dashboard-feedback success">{{ successMessage() }}</p>
+    }
+
+    @if (isLoading()) {
+      <p class="dashboard-empty-state">Loading accounts...</p>
+    } @else if (errorMessage()) {
+      <p class="dashboard-empty-state">{{ errorMessage() }}</p>
+    } @else if (!accounts().length) {
+      <p class="dashboard-empty-state">No accounts matched your current filters.</p>
+    } @else {
+      <div class="dashboard-table-shell">
+        <table class="dashboard-table">
+          <thead>
+            <tr>
+              <th>Avatar</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Gender</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (account of accounts(); track trackByAccount($index, account)) {
+              <tr>
+                <td>
+                  <div class="table-avatar">
+                    <img [src]="account.avatarUrl" [alt]="account.name" />
+                  </div>
+                </td>
+                <td>
+                  <div class="table-name-cell">
+                    <strong>{{ account.name }}</strong>
+                  </div>
+                </td>
+                <td>{{ account.email }}</td>
+                <td class="table-capitalize">{{ account.gender }}</td>
+                <td>{{ account.mobileNumber }}</td>
+                <td>
+                  <span
+                    class="role-pill"
+                    [class.superadmin]="account.role === 'superadmin'"
+                    [class.admin]="account.role === 'admin'"
+                  >
+                    {{ formatRole(account.role) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="table-actions">
+                    <button type="button" class="table-action-button" disabled>Edit</button>
+                    <button type="button" class="table-action-button danger" disabled>
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="dashboard-pagination">
+        <p>
+          Showing page {{ pagination().page }} of {{ pagination().totalPages }} ·
+          {{ pagination().totalItems }} accounts
+        </p>
+
+        <div class="pagination-actions">
+          <button
+            type="button"
+            class="pagination-button"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+          >
+            Previous
+          </button>
+
+          @for (page of pageNumbers(); track page) {
+            <button
+              type="button"
+              class="pagination-button"
+              [class.active]="page === currentPage()"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+
+          <button
+            type="button"
+            class="pagination-button"
+            [disabled]="currentPage() === pagination().totalPages"
+            (click)="goToPage(currentPage() + 1)"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    }
+  </article>
+
+  @if (showAddAdminDialog()) {
+    <div class="dashboard-dialog-backdrop" (click)="closeAddAdminDialog()">
+      <div class="dashboard-dialog" (click)="$event.stopPropagation()">
+        <div class="dashboard-dialog-header">
+          <div>
+            <p class="dashboard-page-eyebrow">Account</p>
+            <h3>Add Admin</h3>
+          </div>
+          <button type="button" class="dashboard-dialog-close" (click)="closeAddAdminDialog()">
+            ×
+          </button>
+        </div>
+
+        <div class="dashboard-dialog-grid">
+          <label class="dashboard-search-field">
+            <span>Username</span>
+            <input
+              type="text"
+              [ngModel]="addAdminForm().username"
+              (ngModelChange)="updateAddAdminField('username', $event)"
+              placeholder="admin_name"
+            />
+          </label>
+
+          <label class="dashboard-search-field">
+            <span>Email</span>
+            <input
+              type="email"
+              [ngModel]="addAdminForm().email"
+              (ngModelChange)="updateAddAdminField('email', $event)"
+              placeholder="admin@example.com"
+            />
+          </label>
+
+          <label class="dashboard-search-field">
+            <span>Phone</span>
+            <input
+              type="text"
+              [ngModel]="addAdminForm().mobileNumber"
+              (ngModelChange)="updateAddAdminField('mobileNumber', $event)"
+              placeholder="0900000000"
+            />
+          </label>
+        </div>
+
+        <p class="dashboard-note">
+          The default password for this new admin account will be <strong>1234567890</strong>.
+        </p>
+
+        @if (errorMessage()) {
+          <p class="dashboard-feedback error">{{ errorMessage() }}</p>
+        }
+
+        <div class="dashboard-dialog-actions">
+          <button type="button" class="pagination-button" (click)="closeAddAdminDialog()">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="dashboard-primary-button"
+            [disabled]="isCreatingAdmin()"
+            (click)="submitAddAdmin()"
+          >
+            {{ isCreatingAdmin() ? 'Creating...' : 'Create Admin' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

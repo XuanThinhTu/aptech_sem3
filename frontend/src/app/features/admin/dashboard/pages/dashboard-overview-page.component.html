@@ -1,0 +1,158 @@
+<section class="dashboard-page">
+  <div class="dashboard-page-heading">
+    <p class="dashboard-page-eyebrow">Dashboard</p>
+    <h2>Management Home</h2>
+  </div>
+
+  @if (isLoading()) {
+    <article class="dashboard-table-card">
+      <p>Loading dashboard overview...</p>
+    </article>
+  } @else if (errorMessage()) {
+    <article class="dashboard-table-card">
+      <p>{{ errorMessage() }}</p>
+    </article>
+  } @else if (overview(); as data) {
+    <div class="dashboard-card-grid">
+      <article class="dashboard-card stat-card">
+        <div class="stat-card-header">
+          <div>
+            <p class="dashboard-card-title">Accounts</p>
+            <h3>{{ data.accounts.total }}</h3>
+          </div>
+          <span class="stat-pill">{{ data.accounts.onlineRate }}% online</span>
+        </div>
+
+        <div class="stat-list">
+          <div>
+            <span>Created accounts</span>
+            <strong>{{ data.accounts.total }}</strong>
+          </div>
+          <div>
+            <span>Online now</span>
+            <strong class="positive">{{ data.accounts.online }}</strong>
+          </div>
+          <div>
+            <span>Offline now</span>
+            <strong>{{ data.accounts.offline }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="dashboard-card stat-card">
+        <div class="stat-card-header">
+          <div>
+            <p class="dashboard-card-title">Services</p>
+            <h3>{{ data.services.active }}</h3>
+          </div>
+          <span class="stat-pill">{{ data.services.activeRate }}% active</span>
+        </div>
+
+        <div class="stat-list">
+          <div>
+            <span>Active services</span>
+            <strong class="positive">{{ data.services.active }}</strong>
+          </div>
+          <div>
+            <span>Inactive services</span>
+            <strong>{{ data.services.inactive }}</strong>
+          </div>
+          <div>
+            <span>User subscriptions</span>
+            <strong
+              >{{ data.services.activeSubscriptions }} active / {{
+                data.services.totalSubscriptions
+              }} total</strong
+            >
+          </div>
+        </div>
+      </article>
+
+      <article class="dashboard-card stat-card">
+        <div class="stat-card-header">
+          <div>
+            <p class="dashboard-card-title">Orders</p>
+            <h3>{{ data.orders.total }}</h3>
+          </div>
+          <span class="stat-pill">{{ formatCurrency(data.orders.totalRevenue) }}</span>
+        </div>
+
+        <div class="stat-list">
+          <div>
+            <span>Pending</span>
+            <strong>{{ data.orders.pending }}</strong>
+          </div>
+          <div>
+            <span>Approved</span>
+            <strong class="positive">{{ data.orders.approved }}</strong>
+          </div>
+          <div>
+            <span>Cancelled</span>
+            <strong>{{ data.orders.cancelled }}</strong>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="dashboard-detail-grid">
+      <article class="dashboard-table-card revenue-card">
+        <div class="dashboard-section-header">
+          <div>
+            <p class="dashboard-card-title">Revenue</p>
+            <h3>Last 7 days</h3>
+          </div>
+          <span class="chart-total">{{ formatCurrency(data.orders.totalRevenue) }}</span>
+        </div>
+
+        <div class="revenue-chart">
+          @for (item of data.orders.revenueLast7Days; track item.dateKey) {
+            <div class="revenue-day">
+              <div class="revenue-bar-shell">
+                <div
+                  class="revenue-bar"
+                  [style.height.px]="revenueHeight(item.revenue)"
+                  [attr.aria-label]="item.label + ' ' + formatCurrency(item.revenue)"
+                ></div>
+              </div>
+              <strong>{{ item.label }}</strong>
+              <span>{{ formatCurrency(item.revenue) }}</span>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="dashboard-table-card order-status-card">
+        <div class="dashboard-section-header">
+          <div>
+            <p class="dashboard-card-title">Order Status</p>
+            <h3>Current payment-based states</h3>
+          </div>
+        </div>
+
+        <div class="stat-list order-status-list">
+          <div>
+            <span>Pending</span>
+            <strong>{{ data.orders.pending }}</strong>
+          </div>
+          <div>
+            <span>Approved</span>
+            <strong class="positive">{{ data.orders.approved }}</strong>
+          </div>
+          <div>
+            <span>Completed</span>
+            <strong class="positive">{{ data.orders.completed }}</strong>
+          </div>
+          <div>
+            <span>Cancelled</span>
+            <strong>{{ data.orders.cancelled }}</strong>
+          </div>
+        </div>
+
+        <p class="dashboard-note">
+          These states currently follow payment records and can be expanded when your custom order
+          workflow is added.
+        </p>
+      </article>
+    </div>
+  }
+</section>

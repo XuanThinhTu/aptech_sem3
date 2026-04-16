@@ -1,0 +1,52 @@
+<main class="auth-shell">
+  <section class="auth-panel brand-panel">
+    <p class="eyebrow">SMS Connect</p>
+    <h1>Pick up right where your conversations left off.</h1>
+    <p class="lede">
+      Sign in to catch up with friends, manage your contacts, and keep every
+      important message close.
+    </p>
+    <div class="feature-list">
+      <span>Email, phone, or username</span>
+      <span>Fast sign in</span>
+      <span>Stay connected daily</span>
+    </div>
+  </section>
+
+  <section class="auth-panel form-panel">
+    <h2>Sign in</h2>
+
+    @if (successMessage()) {
+      <p class="notice success">{{ successMessage() }}</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="notice error">{{ errorMessage() }}</p>
+    }
+
+    @if (loginResult()) {
+      <p class="notice success">{{ loginResult() }}</p>
+    }
+
+    <form [formGroup]="loginForm" (ngSubmit)="login()" class="auth-form">
+      <label>
+        <span>Email, phone, or username</span>
+        <input type="text" formControlName="identifier" placeholder="Enter your email, phone, or username" />
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input type="password" formControlName="password" placeholder="Enter your password" />
+      </label>
+
+      <button type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Signing in...' : 'Open my account' }}
+      </button>
+    </form>
+
+    <p class="auth-link">
+      New here?
+      <a routerLink="/register">Create an account</a>
+    </p>
+  </section>
+</main>

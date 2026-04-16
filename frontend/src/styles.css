@@ -1,0 +1,126 @@
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.subscription-dialog {
+  width: min(100%, 680px);
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 252, 247, 0.99);
+  box-shadow: 0 28px 70px rgba(50, 31, 19, 0.2);
+  border: 1px solid rgba(140, 63, 29, 0.12);
+  display: grid;
+  gap: 20px;
+}
+
+.subscription-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subscription-dialog-eyebrow {
+  margin: 0 0 6px;
+  color: #a95b29;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subscription-dialog-header h3 {
+  margin: 0;
+  color: #281a12;
+}
+
+.subscription-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.subscription-summary-card,
+.subscription-service-item,
+.subscription-total-row {
+  border-radius: 20px;
+  background: #fbf5ec;
+}
+
+.subscription-summary-card {
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.subscription-summary-card span,
+.subscription-service-copy span,
+.subscription-total-row span {
+  color: #7c6351;
+}
+
+.subscription-service-list {
+  display: grid;
+  gap: 12px;
+}
+
+.subscription-service-item {
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.subscription-service-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.subscription-total-row {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.subscription-dialog .feedback {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.subscription-dialog .feedback.error {
+  background: rgba(185, 51, 51, 0.1);
+  color: #9b2525;
+}
+
+.friend-dialog-button.primary {
+  background: #8c3f1d;
+  color: white;
+}
+
+.service-price {
+  display: block;
+  margin-bottom: 8px;
+  color: #8c3f1d;
+  font-size: 0.96rem;
+}
+
+@media (max-width: 760px) {
+  .subscription-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-service-item,
+  .subscription-total-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,216 @@
+<main class="profile-shell">
+  @if (currentUser(); as user) {
+    <section class="profile-card">
+      <aside class="profile-summary">
+        <p class="eyebrow">Edit Profile</p>
+        <h1>Your account</h1>
+
+        <div class="profile-avatar">
+          @if (avatarPreviewUrl()) {
+            <img
+              [src]="avatarPreviewUrl()"
+              [alt]="profileForm.controls.name.value || user.username"
+            />
+          } @else {
+            <span>{{ avatarFallback() }}</span>
+          }
+        </div>
+
+        <label class="avatar-upload">
+          <span>{{ isUploadingAvatar() ? 'Uploading avatar...' : 'Choose avatar' }}</span>
+          <input type="file" accept="image/*" (change)="onAvatarSelected($event)" />
+        </label>
+        @if (selectedAvatarName()) {
+          <p class="avatar-file-name">{{ selectedAvatarName() }}</p>
+        }
+        <p class="summary-note">
+          Username and mobile number are fixed account details and cannot be changed.
+        </p>
+        <p class="summary-note">Choose a new image and it will update your avatar immediately.</p>
+
+        <div class="summary-list">
+          <div>
+            <span class="summary-label">Username</span>
+            <strong>{{ user.username }}</strong>
+          </div>
+          <div>
+            <span class="summary-label">Email</span>
+            <strong>{{ user.email }}</strong>
+          </div>
+          <div>
+            <span class="summary-label">Mobile</span>
+            <strong>{{ user.mobileNumber }}</strong>
+          </div>
+        </div>
+      </aside>
+
+      <section class="profile-form-card">
+        @if (isLoading()) {
+          <p class="state-message">Loading profile...</p>
+        } @else {
+          <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="openSaveConfirmDialog()">
+            <div class="form-section">
+              <div class="section-heading">
+                <h2>Personal Details</h2>
+              </div>
+
+              <div class="form-grid">
+                <label class="field">
+                  <span>Name</span>
+                  <input type="text" formControlName="name" />
+                </label>
+
+                <label class="field">
+                  <span>Gender</span>
+                  <select formControlName="gender">
+                    @for (option of genderOptions; track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Date of birth</span>
+                  <input type="date" formControlName="dob" />
+                </label>
+
+                <label class="field">
+                  <span>Marital status</span>
+                  <select formControlName="maritalStatus">
+                    @for (option of maritalStatusOptions; track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Address</span>
+                  <input type="text" formControlName="address" />
+                </label>
+
+                <label class="field field-wide">
+                  <span>Hobbies</span>
+                  <textarea
+                    rows="2"
+                    formControlName="hobbies"
+                    placeholder="Reading, music, travel"
+                  ></textarea>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Likes</span>
+                  <textarea
+                    rows="2"
+                    formControlName="likes"
+                    placeholder="Clean UI, teamwork, football"
+                  ></textarea>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Dislikes</span>
+                  <textarea
+                    rows="2"
+                    formControlName="dislikes"
+                    placeholder="Spam, delays, noise"
+                  ></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Cuisines</span>
+                  <input type="text" formControlName="cuisines" placeholder="Vietnamese, Korean" />
+                </label>
+
+                <label class="field">
+                  <span>Sports</span>
+                  <input type="text" formControlName="sports" placeholder="Football, badminton" />
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-heading">
+                <h2>Professional Details</h2>
+                <p>Tell people about your education and work status.</p>
+              </div>
+
+              <div class="form-grid">
+                <label class="field">
+                  <span>Qualification</span>
+                  <input type="text" formControlName="qualification" />
+                </label>
+
+                <label class="field">
+                  <span>School</span>
+                  <input type="text" formControlName="school" />
+                </label>
+
+                <label class="field">
+                  <span>College</span>
+                  <input type="text" formControlName="college" />
+                </label>
+
+                <label class="field">
+                  <span>Work status</span>
+                  <select formControlName="workStatus">
+                    @for (option of workStatusOptions; track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Organization</span>
+                  <input type="text" formControlName="organization" />
+                </label>
+
+                <label class="field">
+                  <span>Designation</span>
+                  <input type="text" formControlName="designation" />
+                </label>
+              </div>
+            </div>
+
+            @if (errorMessage()) {
+              <p class="feedback error">{{ errorMessage() }}</p>
+            }
+
+            @if (successMessage()) {
+              <p class="feedback success">{{ successMessage() }}</p>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="profile-button primary" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Saving profile...' : 'Save profile' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    </section>
+
+    @if (showSaveConfirmDialog()) {
+      <div class="confirm-dialog-backdrop" (click)="closeSaveConfirmDialog()">
+        <div class="confirm-dialog" (click)="$event.stopPropagation()">
+          <h2>Save profile changes?</h2>
+          <p>Your personal and professional details will be updated for this account.</p>
+          <div class="confirm-dialog-actions">
+            <button
+              type="button"
+              class="profile-button secondary"
+              (click)="closeSaveConfirmDialog()"
+            >
+              Cancel
+            </button>
+            <button type="button" class="profile-button primary" (click)="confirmSaveProfile()">
+              Confirm save
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  } @else {
+    <section class="profile-card single-column-card">
+      <p>You are not logged in yet.</p>
+    </section>
+  }
+</main>

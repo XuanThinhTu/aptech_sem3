@@ -1,0 +1,415 @@
+<app-site-layout>
+  <section class="content-grid" [class.single-column]="!isLoggedIn()">
+    @if (isLoggedIn()) {
+      <aside class="friends-panel">
+        <div class="panel-heading">
+          <h2>Friends</h2>
+          <p>{{ connectedFriendsCount() }} connected</p>
+        </div>
+
+        @if (friendsLoading()) {
+          <p class="empty-state">Loading your friend list...</p>
+        } @else if (friendsError()) {
+          <p class="empty-state">{{ friendsError() }}</p>
+        } @else if (!friends().length) {
+          <p class="empty-state">
+            You have not connected with any friends yet. Your friend list will appear here after
+            you start building your network.
+          </p>
+        } @else {
+          <label class="friends-search-shell">
+            <span class="friends-search-icon">Search</span>
+            <input
+              type="search"
+              [ngModel]="friendsSearchQuery()"
+              (ngModelChange)="onFriendsSearchChange($event)"
+              placeholder="Find a friend by name"
+            />
+          </label>
+
+          @if (!filteredFriends().length) {
+            <p class="empty-state friend-empty-state">
+              No friends matched your search.
+            </p>
+          } @else {
+          <div class="friend-list">
+            @for (friend of paginatedFriends(); track friend.id) {
+              <article class="friend-card">
+                <button
+                  type="button"
+                  class="friend-card-main"
+                  (click)="openFriendProfile(friend)"
+                >
+                  <div class="friend-avatar">
+                    @if (friend.avatarUrl) {
+                      <img [src]="friend.avatarUrl" [alt]="friend.displayName" />
+                    } @else {
+                      <span>{{ profileInitial(friend.displayName) }}</span>
+                    }
+                  </div>
+                  <div>
+                    <h3 class="friend-name">
+                      <span
+                        class="friend-status-badge"
+                        [class.online]="friend.isOnline"
+                        [class.offline]="!friend.isOnline"
+                      ></span>
+                      {{ friend.displayName }}
+                    </h3>
+                  </div>
+                </button>
+
+                <div class="friend-card-actions">
+                  <button
+                    type="button"
+                    class="friend-message-button"
+                    [class.has-unread]="shouldShowUnreadBadge(friend)"
+                    (click)="openChat(friend)"
+                  >
+                    <span class="friend-message-icon" aria-hidden="true">&#9993;</span>
+                    @if (shouldShowUnreadBadge(friend)) {
+                      <span class="friend-message-badge">{{ friend.unreadCount }}</span>
+                    }
+                  </button>
+
+                  <button
+                    type="button"
+                    class="friend-remove-button"
+                    [disabled]="removingFriendId() === friend.id"
+                    (click)="openRemoveFriendDialog(friend)"
+                  >
+                    {{ removingFriendId() === friend.id ? '...' : 'x' }}
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+
+          @if (totalFriendsPages() > 1) {
+            <div class="friends-pagination">
+              <button
+                type="button"
+                class="pagination-button pagination-nav"
+                [disabled]="currentFriendsPage() === 1"
+                (click)="goToFriendsPage(currentFriendsPage() - 1)"
+              >
+                Prev
+              </button>
+
+              <div class="pagination-pages">
+                @for (page of friendPageNumbers(); track page) {
+                  <button
+                    type="button"
+                    class="pagination-button"
+                    [class.active]="page === currentFriendsPage()"
+                    (click)="goToFriendsPage(page)"
+                  >
+                    {{ page }}
+                  </button>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="pagination-button pagination-nav"
+                [disabled]="currentFriendsPage() === totalFriendsPages()"
+                (click)="goToFriendsPage(currentFriendsPage() + 1)"
+              >
+                Next
+              </button>
+            </div>
+          }
+          }
+        }
+      </aside>
+    }
+
+    <section class="services-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Available Services</h2>
+          <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
+        </div>
+        <button
+          type="button"
+          class="services-subscribe-button"
+          [disabled]="!selectedServiceIds().length"
+          (click)="subscribeSelectedServices()"
+        >
+          Subscribe selected
+        </button>
+      </div>
+
+      @if (serviceActionMessage()) {
+        <p class="services-feedback">{{ serviceActionMessage() }}</p>
+      }
+
+      @if (servicesLoading()) {
+        <p class="empty-state">Loading services...</p>
+      } @else if (servicesError()) {
+        <p class="empty-state">{{ servicesError() }}</p>
+      } @else {
+        <div class="services-grid">
+          @for (service of services(); track service.id) {
+            <article class="service-card">
+              <label class="service-check">
+                <input
+                  type="checkbox"
+                  [checked]="isServiceSelected(service.id)"
+                  (change)="toggleService(service.id, $any($event.target).checked)"
+                />
+                <span>Select</span>
+              </label>
+              <img [src]="service.imageUrl" [alt]="service.title" />
+              <div class="service-copy">
+                <h3>{{ service.title }}</h3>
+                <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
+                <p>{{ service.description }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </section>
+
+  @if (friendPendingRemoval(); as friendToRemove) {
+    <div class="friend-dialog-backdrop" (click)="closeRemoveFriendDialog()">
+      <div class="friend-dialog" (click)="$event.stopPropagation()">
+        <h3>Remove friend?</h3>
+        <p>
+          Do you want to remove <strong>{{ friendToRemove.displayName }}</strong> from your friends
+          list?
+        </p>
+
+        <div class="friend-dialog-actions">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            [disabled]="!!removingFriendId()"
+            (click)="closeRemoveFriendDialog()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="friend-dialog-button danger"
+            [disabled]="removingFriendId() === friendToRemove.id"
+            (click)="confirmRemoveFriend()"
+          >
+            {{ removingFriendId() === friendToRemove.id ? 'Removing...' : 'Remove' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showSubscriptionDialog() && currentUser(); as user) {
+    <div class="friend-dialog-backdrop" (click)="closeSubscriptionDialog()">
+      <div class="subscription-dialog" (click)="$event.stopPropagation()">
+        <div class="subscription-dialog-header">
+          <div>
+            <p class="subscription-dialog-eyebrow">Service Order</p>
+            <h3>Confirm your subscription</h3>
+          </div>
+          <button
+            type="button"
+            class="chat-popup-close friend-profile-close"
+            (click)="closeSubscriptionDialog()"
+          >
+            x
+          </button>
+        </div>
+
+        <div class="subscription-summary-grid">
+          <div class="subscription-summary-card">
+            <span>Name</span>
+            <strong>{{ user.displayName }}</strong>
+          </div>
+          <div class="subscription-summary-card">
+            <span>Email</span>
+            <strong>{{ user.email }}</strong>
+          </div>
+          <div class="subscription-summary-card">
+            <span>Phone</span>
+            <strong>{{ user.mobileNumber }}</strong>
+          </div>
+        </div>
+
+        <div class="subscription-service-list">
+          @for (service of selectedServices(); track service.id) {
+            <div class="subscription-service-item">
+              <div class="subscription-service-copy">
+                <strong>{{ service.title }}</strong>
+                <span>{{ service.description }}</span>
+              </div>
+              <strong>{{ service.monthlyPrice | number }} VND</strong>
+            </div>
+          }
+        </div>
+
+        <div class="subscription-total-row">
+          <span>Total</span>
+          <strong>{{ selectedServicesTotal() | number }} VND</strong>
+        </div>
+
+        @if (checkoutErrorMessage()) {
+          <p class="feedback error">{{ checkoutErrorMessage() }}</p>
+        }
+
+        <div class="friend-dialog-actions">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            [disabled]="isCreatingCheckout()"
+            (click)="closeSubscriptionDialog()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="friend-dialog-button primary"
+            [disabled]="isCreatingCheckout()"
+            (click)="confirmSubscriptionCheckout()"
+          >
+            {{ isCreatingCheckout() ? 'Redirecting to VNPay...' : 'Confirm order' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (friendProfileTarget(); as friendProfileTarget) {
+    <div class="friend-profile-dialog-backdrop" (click)="closeFriendProfileDialog()">
+      <div class="friend-profile-dialog" (click)="$event.stopPropagation()">
+        @if (friendProfileLoading()) {
+          <p class="friend-profile-state">Loading friend profile...</p>
+        } @else if (friendProfileError()) {
+          <div class="friend-profile-state-block">
+            <p class="friend-profile-state error">{{ friendProfileError() }}</p>
+            <button
+              type="button"
+              class="friend-dialog-button secondary"
+              (click)="closeFriendProfileDialog()"
+            >
+              Close
+            </button>
+          </div>
+        } @else if (friendProfileDetails(); as friendProfile) {
+          <div class="friend-profile-header">
+            <div class="friend-profile-avatar">
+              @if (friendProfile.friend.avatarUrl) {
+                <img [src]="friendProfile.friend.avatarUrl" [alt]="friendProfile.friend.displayName" />
+              } @else {
+                <span>{{ profileInitial(friendProfile.friend.displayName) }}</span>
+              }
+            </div>
+
+            <div class="friend-profile-heading">
+              <p class="friend-profile-eyebrow">Friend Profile</p>
+              <h3>{{ friendProfile.friend.displayName }}</h3>
+              <p>{{ friendProfile.friend.email }}</p>
+            </div>
+
+            <button
+              type="button"
+              class="chat-popup-close friend-profile-close"
+              (click)="closeFriendProfileDialog()"
+            >
+              x
+            </button>
+          </div>
+
+          <div class="friend-profile-grid">
+            <div class="friend-profile-info">
+              <span>Name</span>
+              <strong>{{ friendProfile.profile.name || friendProfile.friend.displayName }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Gender</span>
+              <strong>{{ friendProfile.profile.gender || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Date of birth</span>
+              <strong>{{ friendProfile.profile.dob || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Address</span>
+              <strong>{{ friendProfile.profile.address || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Marital status</span>
+              <strong>{{ friendProfile.profile.maritalStatus || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Email</span>
+              <strong>{{ friendProfile.friend.email }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Mobile</span>
+              <strong>{{ friendProfile.friend.mobileNumber }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Hobbies</span>
+              <strong>{{ friendProfile.profile.hobbies.length ? friendProfile.profile.hobbies.join(', ') : 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Likes</span>
+              <strong>{{ friendProfile.profile.likes.length ? friendProfile.profile.likes.join(', ') : 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Dislikes</span>
+              <strong>{{ friendProfile.profile.dislikes.length ? friendProfile.profile.dislikes.join(', ') : 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Cuisines</span>
+              <strong>{{ friendProfile.profile.cuisines.length ? friendProfile.profile.cuisines.join(', ') : 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Sports</span>
+              <strong>{{ friendProfile.profile.sports.length ? friendProfile.profile.sports.join(', ') : 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Qualification</span>
+              <strong>{{ friendProfile.profile.qualification || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>School</span>
+              <strong>{{ friendProfile.profile.school || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>College</span>
+              <strong>{{ friendProfile.profile.college || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Work status</span>
+              <strong>{{ friendProfile.profile.workStatus || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Organization</span>
+              <strong>{{ friendProfile.profile.organization || 'Not updated' }}</strong>
+            </div>
+            <div class="friend-profile-info">
+              <span>Designation</span>
+              <strong>{{ friendProfile.profile.designation || 'Not updated' }}</strong>
+            </div>
+          </div>
+        } @else {
+          <p class="friend-profile-state">Profile is not available right now.</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (activeChatFriend(); as chatFriend) {
+    <app-chat-popup
+      [friend]="chatFriend"
+      [messages]="chatMessages()"
+      [isLoading]="chatLoading()"
+      [isSending]="chatSending()"
+      [errorMessage]="chatError()"
+      (close)="closeChat()"
+      (sendMessage)="sendChatMessage($event)"
+    />
+  }
+</app-site-layout>

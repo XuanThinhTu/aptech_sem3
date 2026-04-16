@@ -1,0 +1,74 @@
+<section class="chat-popup">
+  <header class="chat-popup-header">
+    <div class="chat-popup-profile">
+      <div class="chat-popup-avatar">
+        @if (friend().avatarUrl) {
+          <img [src]="friend().avatarUrl" [alt]="friend().displayName" />
+        } @else {
+          <span>{{ chatInitial(friend().displayName) }}</span>
+        }
+      </div>
+
+      <div>
+        <h3>{{ friend().displayName }}</h3>
+        <p>
+          <span class="chat-popup-status" [class.online]="friend().isOnline"></span>
+          {{ friend().isOnline ? 'Online now' : 'Offline' }}
+        </p>
+      </div>
+    </div>
+
+    <button type="button" class="chat-popup-close" (click)="close.emit()">
+      x
+    </button>
+  </header>
+
+  <div class="chat-popup-body">
+    @if (isLoading()) {
+      <p class="chat-popup-state">Loading conversation...</p>
+    } @else if (errorMessage()) {
+      <p class="chat-popup-state error">{{ errorMessage() }}</p>
+    } @else if (!messages().length) {
+      <p class="chat-popup-state">
+        Start the conversation with {{ friend().displayName }}.
+      </p>
+    } @else {
+      <div class="chat-popup-messages">
+        @for (message of messages(); track message.id) {
+          <article class="chat-bubble-row" [class.own]="message.isOwnMessage">
+            <div class="chat-bubble">
+              <p>{{ message.content }}</p>
+              <div class="chat-bubble-meta">
+                <span>{{ messageTime(message.createdAt) }}</span>
+                @if (message.isOwnMessage && message.isRead) {
+                  <span>Seen</span>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+
+  <footer class="chat-popup-footer">
+    <label class="chat-composer">
+      <textarea
+        [ngModel]="draft()"
+        (ngModelChange)="draft.set($event)"
+        rows="1"
+        maxlength="120"
+        placeholder="Write a message..."
+      ></textarea>
+    </label>
+
+    <button
+      type="button"
+      class="chat-send-button"
+      [disabled]="!canSend()"
+      (click)="send()"
+    >
+      {{ isSending() ? '...' : 'Send' }}
+    </button>
+  </footer>
+</section>

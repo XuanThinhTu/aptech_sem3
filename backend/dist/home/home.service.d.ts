@@ -1,0 +1,61 @@
+import { ConfigService } from '@nestjs/config';
+import { Model } from 'mongoose';
+import { ContentService } from '../database/schemas/content-service.schema';
+import { Friendship } from '../database/schemas/friendship.schema';
+import { Message } from '../database/schemas/message.schema';
+import { Payment } from '../database/schemas/payment.schema';
+import { Profile } from '../database/schemas/profile.schema';
+import { ServiceSubscription } from '../database/schemas/service-subscription.schema';
+import { User } from '../database/schemas/user.schema';
+import { FriendsRealtimeService } from '../friends/friends-realtime.service';
+import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkout.dto';
+export declare class HomeService {
+    private readonly configService;
+    private readonly friendsRealtimeService;
+    private readonly contentServiceModel;
+    private readonly friendshipModel;
+    private readonly messageModel;
+    private readonly paymentModel;
+    private readonly serviceSubscriptionModel;
+    private readonly userModel;
+    private readonly profileModel;
+    private readonly backendBaseUrl;
+    private readonly frontendBaseUrl;
+    private readonly defaultAvatarPath;
+    private readonly vnpayUrl;
+    private readonly vnpayTmnCode;
+    private readonly vnpayHashSecret;
+    private readonly vnpayOrderType;
+    private readonly vnpayLocale;
+    private readonly vnpayCurrency;
+    constructor(configService: ConfigService, friendsRealtimeService: FriendsRealtimeService, contentServiceModel: Model<ContentService>, friendshipModel: Model<Friendship>, messageModel: Model<Message>, paymentModel: Model<Payment>, serviceSubscriptionModel: Model<ServiceSubscription>, userModel: Model<User>, profileModel: Model<Profile>);
+    getServices(): Promise<{
+        id: string;
+        key: string;
+        title: string;
+        description: string;
+        imageUrl: string;
+        monthlyPrice: number;
+    }[]>;
+    getFriends(userId: string): Promise<{
+        id: string;
+        username: string;
+        email: string;
+        mobileNumber: string;
+        displayName: string;
+        avatarUrl: string;
+        isOnline: boolean;
+        unreadCount: number;
+    }[]>;
+    createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto): Promise<{
+        paymentUrl: string;
+        txnRef: string;
+    }>;
+    handleVnpayReturn(query: Record<string, string>): Promise<string>;
+    private toPublicAssetUrl;
+    private createPendingSubscriptions;
+    private buildVnpayPaymentUrl;
+    private buildSortedQuery;
+    private formatVnpayDate;
+    private generateTxnRef;
+}

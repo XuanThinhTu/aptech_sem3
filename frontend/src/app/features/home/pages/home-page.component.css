@@ -1,0 +1,599 @@
+.panel-heading p,
+.empty-state,
+.friend-card p,
+.service-copy p {
+  margin: 0;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.content-grid.single-column {
+  grid-template-columns: 1fr;
+}
+
+.friends-panel,
+.services-panel {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 60px rgba(73, 48, 28, 0.12);
+  padding: 28px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  color: #281a12;
+  font-size: 1.5rem;
+}
+
+.panel-heading p,
+.empty-state,
+.friend-card p,
+.service-copy p {
+  color: #6c5544;
+}
+
+.services-subscribe-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #8c3f1d;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.services-subscribe-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.services-feedback {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(47, 125, 74, 0.12);
+  color: #21613a;
+}
+
+.friend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.friends-search-shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: rgba(251, 245, 236, 0.96);
+  border: 1px solid rgba(140, 63, 29, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.friends-search-icon {
+  color: #8b684f;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.friends-search-shell input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #2a1d14;
+  font: inherit;
+}
+
+.friends-search-shell input:focus {
+  outline: none;
+}
+
+.friend-empty-state {
+  padding: 20px 0 6px;
+}
+
+.friend-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: #fbf5ec;
+}
+
+.friend-card-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.friend-avatar {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f1c68f 0%, #da8b54 100%);
+  color: #3d2416;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.friend-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-card h3,
+.service-copy h3 {
+  margin: 0 0 4px;
+  color: #281a12;
+}
+
+.friend-card h3 {
+  margin-bottom: 0;
+}
+
+.friend-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.friend-status-badge {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.friend-status-badge.online {
+  background: #2db24c;
+  box-shadow: 0 0 0 4px rgba(45, 178, 76, 0.14);
+}
+
+.friend-status-badge.offline {
+  background: #a7a29b;
+  box-shadow: 0 0 0 4px rgba(167, 162, 155, 0.14);
+}
+
+.friend-remove-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(161, 47, 47, 0.12);
+  color: #982828;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.friend-remove-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.friend-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.friend-message-button {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(41 215 108 / 30%);
+  color: #2b1d8c;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.friend-message-button.has-unread {
+  background: rgba(3, 255, 255, 0.298);
+}
+
+.friend-message-icon {
+  font-size: 1.98rem;
+  line-height: 1;
+}
+
+.friend-message-badge {
+  position: absolute;
+  top: -9px;
+  right: 3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d34545;
+  color: white;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(211, 69, 69, 0.24);
+}
+
+.friends-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-button {
+  min-width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(140, 63, 29, 0.08);
+  color: #74492f;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: rgba(140, 63, 29, 0.14);
+  transform: translateY(-1px);
+}
+
+.pagination-button.active {
+  background: #8c3f1d;
+  color: white;
+  box-shadow: 0 10px 24px rgba(140, 63, 29, 0.22);
+}
+
+.pagination-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-nav {
+  padding: 0 16px;
+  min-width: 68px;
+}
+
+.friend-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(38, 23, 14, 0.32);
+  backdrop-filter: blur(6px);
+}
+
+.friend-dialog {
+  width: min(100%, 420px);
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 252, 247, 0.98);
+  box-shadow: 0 28px 70px rgba(50, 31, 19, 0.2);
+  border: 1px solid rgba(140, 63, 29, 0.12);
+}
+
+.friend-dialog h3,
+.friend-dialog p {
+  margin: 0;
+}
+
+.friend-dialog h3 {
+  color: #281a12;
+  font-size: 1.35rem;
+  margin-bottom: 10px;
+}
+
+.friend-dialog p {
+  color: #6c5544;
+  line-height: 1.55;
+}
+
+.friend-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.friend-dialog-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.friend-dialog-button.secondary {
+  background: rgba(140, 63, 29, 0.08);
+  color: #70452c;
+}
+
+.friend-dialog-button.danger {
+  background: #8c3f1d;
+  color: white;
+}
+
+.friend-dialog-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.friend-profile-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(38, 23, 14, 0.32);
+  backdrop-filter: blur(6px);
+}
+
+.friend-profile-dialog {
+  width: min(100%, 980px);
+  max-height: calc(100vh - 72px);
+  overflow: auto;
+  padding: 22px 24px 24px;
+  border-radius: 28px;
+  background: rgb(169 191 203 / 98%);
+  box-shadow: 0 28px 70px rgba(50, 31, 19, 0.2);
+  border: 1px solid rgba(140, 63, 29, 0.12);
+}
+
+.friend-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  text-align: center;
+  position: relative;
+}
+
+.friend-profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #f1c68f 0%, #d98451 100%);
+  color: #2b1c12;
+  font-size: 2.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.friend-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-profile-heading {
+}
+
+.friend-profile-eyebrow,
+.friend-profile-heading h3,
+.friend-profile-heading p,
+.friend-profile-card h4,
+.friend-profile-list span,
+.friend-profile-list strong,
+.friend-profile-state {
+  margin: 0;
+}
+
+.friend-profile-eyebrow {
+  color: #a95b29;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.friend-profile-heading h3 {
+  color: #2c1d13;
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.friend-profile-heading p {
+  color: #6f5848;
+}
+
+.friend-profile-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(140, 63, 29, 0.1);
+  color: #7b4522;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(72, 46, 25, 0.08);
+}
+
+.friend-profile-close:hover {
+  background: rgba(140, 63, 29, 0.16);
+}
+
+.friend-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.friend-profile-info {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(251, 245, 236, 0.96);
+}
+
+.friend-profile-info span {
+  display: block;
+  margin-bottom: 6px;
+  color: #8d6d58;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.friend-profile-info strong {
+  color: #c66827;
+  line-height: 1.45;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.friend-profile-state {
+  color: #6f5848;
+}
+
+.friend-profile-state.error {
+  color: #9b2525;
+}
+
+.friend-profile-state-block {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.service-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fffaf4;
+  border: 1px solid rgba(123, 87, 60, 0.12);
+}
+
+.service-check {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5f412d;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(69, 45, 27, 0.14);
+}
+
+.service-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #a74f24;
+}
+
+.service-card img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+}
+
+.service-copy {
+  padding: 18px;
+}
+
+@media (max-width: 980px) {
+  .content-grid,
+  .content-grid.single-column,
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .friends-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .friend-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .friend-profile-header {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 680px) {
+  .friend-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .friend-profile-header {
+    align-items: center;
+    text-align: center;
+  }
+}

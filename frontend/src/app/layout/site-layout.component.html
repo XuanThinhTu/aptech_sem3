@@ -1,0 +1,189 @@
+<main class="site-shell">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a [routerLink]="brandRoute()" class="brand-link">
+        <div class="brand">
+          <div class="brand-logo">
+            @if (isLoggedIn() && currentUser()?.avatarUrl) {
+              <img [src]="currentUser()!.avatarUrl" [alt]="currentUser()!.displayName" />
+            } @else {
+              <span class="brand-mark"></span>
+            }
+          </div>
+          <div>
+            <p class="brand-title">SMS Connect</p>
+            @if (isLoggedIn()) {
+              <p class="brand-subtitle brand-status">
+                <span class="online-badge"></span>
+                connected
+              </p>
+            } @else {
+              <p class="brand-subtitle">Online messaging social website</p>
+            }
+          </div>
+        </div>
+      </a>
+
+      @if (isLoggedIn() && showFriendSearch()) {
+        <div class="friend-search">
+          <label class="search-shell">
+            <span class="search-icon">Search</span>
+            <input
+              type="search"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="onSearchChange($event)"
+              placeholder="Find friends by name or phone"
+            />
+          </label>
+
+          @if (searchQuery().trim()) {
+            <div class="search-results">
+              @if (searchLoading()) {
+                <p class="search-state">Searching accounts...</p>
+              } @else if (searchError()) {
+                <p class="search-state error">{{ searchError() }}</p>
+              } @else if (!searchResults().length) {
+                <p class="search-state">No matching accounts found.</p>
+              } @else {
+                @for (result of searchResults(); track result.id) {
+                  <article class="search-result-item">
+                    <div class="search-result-avatar">
+                      @if (result.avatarUrl) {
+                        <img [src]="result.avatarUrl" [alt]="result.displayName" />
+                      } @else {
+                        <span>{{ profileInitial(result.displayName) }}</span>
+                      }
+                    </div>
+
+                    <div class="search-result-copy">
+                      <h3>{{ result.displayName }}</h3>
+                    </div>
+
+                    @if (isSearchActionButton(result)) {
+                      <button
+                        type="button"
+                        class="search-add-button"
+                        [disabled]="sendingRequestId() === result.id"
+                        [class.cancel]="result.relationshipStatus === 'pending_sent'"
+                        (click)="result.relationshipStatus === 'pending_sent' ? cancelFriendRequest(result) : sendFriendRequest(result)"
+                      >
+                        {{ sendingRequestId() === result.id ? '...' : searchActionLabel(result) }}
+                      </button>
+                    } @else if (result.relationshipStatus === 'pending_received' || result.relationshipStatus === 'friends') {
+                      <span class="search-status-pill">{{ searchActionLabel(result) }}</span>
+                    }
+                  </article>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <nav class="header-actions">
+        @if (!isLoggedIn()) {
+          <a routerLink="/login" class="header-button primary">Login</a>
+        } @else {
+          <div class="request-dropdown">
+            <button type="button" class="header-button secondary request-toggle" (click)="toggleRequestsDropdown()">
+              <span class="bell-icon" aria-hidden="true">&#128276;</span>
+              @if (incomingRequestsCount()) {
+                <span class="request-badge">{{ incomingRequestsCount() }}</span>
+              }
+            </button>
+
+            @if (requestsOpen()) {
+              <div class="request-menu">
+                @if (requestsLoading()) {
+                  <p class="request-state">Loading requests...</p>
+                } @else if (requestsError()) {
+                  <p class="request-state error">{{ requestsError() }}</p>
+                } @else if (!incomingRequests().length) {
+                  <p class="request-state">No pending friend requests.</p>
+                } @else {
+                  @for (request of incomingRequests(); track request.requestId) {
+                    <article class="request-item">
+                      <div class="search-result-avatar">
+                        @if (request.avatarUrl) {
+                          <img [src]="request.avatarUrl" [alt]="request.displayName" />
+                        } @else {
+                          <span>{{ profileInitial(request.displayName) }}</span>
+                        }
+                      </div>
+
+                      <div class="search-result-copy">
+                        <h3>{{ request.displayName }}</h3>
+                        <p>{{ request.mobileNumber }}</p>
+                      </div>
+
+                      <div class="request-actions">
+                        <button
+                          type="button"
+                          class="request-accept-button"
+                          [disabled]="respondingRequestId() === request.requestId"
+                          (click)="respondToRequest(request, 'accept')"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          class="request-cancel-button"
+                          [disabled]="respondingRequestId() === request.requestId"
+                          (click)="respondToRequest(request, 'reject')"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </article>
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          <a
+            [routerLink]="primaryLinkRoute()"
+            class="header-button secondary"
+            [class.active]="isActive(primaryLinkRoute())"
+          >
+            {{ primaryLinkLabel() }}
+          </a>
+          @if (secondaryLinkLabel() && secondaryLinkRoute()) {
+            <a
+              [routerLink]="secondaryLinkRoute()"
+              class="header-button secondary"
+              [class.active]="isActive(secondaryLinkRoute())"
+            >
+              {{ secondaryLinkLabel() }}
+            </a>
+          }
+          <a
+            [routerLink]="profileRoute()"
+            class="header-button secondary"
+            [class.active]="isActive(profileRoute())"
+          >
+            Profile
+          </a>
+          <button type="button" class="header-button primary" (click)="logout()">Logout</button>
+        }
+      </nav>
+    </div>
+  </header>
+
+  <div class="site-body">
+    <ng-content />
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div>
+        <p class="footer-title">SMS Connect</p>
+        <p>Manage friends, messages, and premium content services in one place.</p>
+      </div>
+      <div class="footer-meta">
+        <p>Project SEM3</p>
+        <p>Online SMS social website</p>
+      </div>
+    </div>
+  </footer>
+</main>

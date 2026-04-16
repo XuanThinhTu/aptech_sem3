@@ -1,0 +1,78 @@
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.dashboard-sidebar,
+.dashboard-content {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 60px rgba(73, 48, 28, 0.12);
+}
+
+.dashboard-sidebar {
+  position: sticky;
+  top: 108px;
+  padding: 26px;
+}
+
+.dashboard-sidebar-eyebrow {
+  margin: 0 0 8px;
+  color: #a95b29;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-sidebar h1 {
+  margin: 0 0 22px;
+  color: #2c1d13;
+  font-size: 1.7rem;
+}
+
+.dashboard-menu {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-menu-item {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #fbf5ec;
+  color: #5e412d;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.dashboard-menu-item:hover {
+  transform: translateY(-1px);
+  background: rgba(140, 63, 29, 0.12);
+}
+
+.dashboard-menu-item.active {
+  background: linear-gradient(135deg, #a74f24 0%, #8b3f1f 100%);
+  color: white;
+  box-shadow: 0 16px 30px rgba(140, 63, 29, 0.2);
+}
+
+.dashboard-content {
+  min-height: 640px;
+  padding: 28px;
+}
+
+@media (max-width: 980px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar {
+    position: static;
+  }
+}
