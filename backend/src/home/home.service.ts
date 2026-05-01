@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { createHmac, randomBytes } from 'crypto';
 import { Model, Types } from 'mongoose';
+import { PaypalService } from '../payments/payment.service';
 import {
   OrderStatus,
   MessageRecipientType,
@@ -23,6 +24,8 @@ import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkou
 
 @Injectable()
 export class HomeService {
+  [x: string]: any;
+
   private readonly backendBaseUrl: string;
   private readonly frontendBaseUrl: string;
   private readonly defaultAvatarPath = '/uploads/no-image.jpg';
@@ -36,6 +39,7 @@ export class HomeService {
   constructor(
     private readonly configService: ConfigService,
     private readonly friendsRealtimeService: FriendsRealtimeService,
+    private readonly paypalService: PaypalService,
     @InjectModel(ContentService.name)
     private readonly contentServiceModel: Model<ContentService>,
     @InjectModel(Friendship.name)
@@ -155,47 +159,100 @@ export class HomeService {
     });
   }
 
+  // async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
+  //   if (!this.vnpayTmnCode || !this.vnpayHashSecret) {
+  //     throw new BadRequestException('VNPAY is not configured yet.');
+  //   }
+
+  //   const user = await this.userModel.findById(dto.userId).lean();
+  //   if (!user) {
+  //     throw new NotFoundException('User not found.');
+  //   }
+
+  //   const objectIds = dto.serviceIds.map((serviceId) => new Types.ObjectId(serviceId));
+  //   const services = await this.contentServiceModel
+  //     .find({ _id: { $in: objectIds }, isActive: true })
+  //     .lean();
+
+  //   if (services.length !== dto.serviceIds.length) {
+  //     throw new BadRequestException('One or more selected services are unavailable.');
+  //   }
+
+  //   const totalAmount = services.reduce((sum, service) => sum + (service.monthlyPrice ?? 0), 0);
+  //   if (!totalAmount) {
+  //     throw new BadRequestException('The selected services do not have a valid total amount.');
+  //   }
+
+  //   const txnRef = this.generateTxnRef();
+  //   const serviceKeys = services.map((service) => service.key);
+  //   const serviceNames = services.map((service) => service.name);
+
+  //   await this.paymentModel.create({
+  //     userId: new Types.ObjectId(dto.userId),
+  //     provider: PaymentProvider.VNPAY,
+  //     txnRef,
+  //     amount: totalAmount,
+  //     currency: this.vnpayCurrency,
+  //     status: PaymentStatus.PENDING,
+  //     orderStatus: OrderStatus.PENDING,
+  //     serviceTypes: serviceKeys,
+  //     orderInfo: `Subscription order: ${serviceNames.join(', ')}`,
+  //     responseCode: 'INIT',
+  //   });
+
+  //   const paymentUrl = this.buildVnpayPaymentUrl({
+  //     txnRef,
+  //     amount: totalAmount,
+  //     orderInfo: `Subscription order ${txnRef}`,
+  //   });
+
+  //   return {
+  //     paymentUrl,
+  //     txnRef,
+  //   };
+  // }
   async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
-    if (!this.vnpayTmnCode || !this.vnpayHashSecret) {
-      throw new BadRequestException('VNPAY is not configured yet.');
-    }
+  const user = await this.userModel.findById(dto.userId).lean();
+  if (!user) {
+    throw new NotFoundException('User not found.');
+  }
 
-    const user = await this.userModel.findById(dto.userId).lean();
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
+  const objectIds = dto.serviceIds.map(id => new Types.ObjectId(id));
+  const services = await this.contentServiceModel
+    .find({ _id: { $in: objectIds }, isActive: true })
+    .lean();
 
-    const objectIds = dto.serviceIds.map((serviceId) => new Types.ObjectId(serviceId));
-    const services = await this.contentServiceModel
-      .find({ _id: { $in: objectIds }, isActive: true })
-      .lean();
+const totalAmount = services.reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0);
 
-    if (services.length !== dto.serviceIds.length) {
-      throw new BadRequestException('One or more selected services are unavailable.');
-    }
+console.log('SERVICES:', services);
+console.log('TOTAL AMOUNT:', totalAmount);
+  const txnRef = this.generateTxnRef();
 
-    const totalAmount = services.reduce((sum, service) => sum + (service.monthlyPrice ?? 0), 0);
-    if (!totalAmount) {
-      throw new BadRequestException('The selected services do not have a valid total amount.');
-    }
+  await this.paymentModel.create({
+    userId: new Types.ObjectId(dto.userId),
+    provider: dto.provider,
+    txnRef,
+    amount: totalAmount,
+    currency: this.vnpayCurrency,
+    status: PaymentStatus.PENDING,
+    orderStatus: OrderStatus.PENDING,
+  });
 
-    const txnRef = this.generateTxnRef();
-    const serviceKeys = services.map((service) => service.key);
-    const serviceNames = services.map((service) => service.name);
+  // 🔥 FIX 2: tách theo provider
+  if (dto.provider === 'PAYPAL') {
+    const order = await this.paypalService.createOrder(totalAmount, txnRef);
 
-    await this.paymentModel.create({
-      userId: new Types.ObjectId(dto.userId),
-      provider: PaymentProvider.VNPAY,
+    const approvalLink = order.links.find(
+      (l: any) => l.rel === 'approve'
+    )?.href;
+
+    return {
+      paymentUrl: approvalLink,
       txnRef,
-      amount: totalAmount,
-      currency: this.vnpayCurrency,
-      status: PaymentStatus.PENDING,
-      orderStatus: OrderStatus.PENDING,
-      serviceTypes: serviceKeys,
-      orderInfo: `Subscription order: ${serviceNames.join(', ')}`,
-      responseCode: 'INIT',
-    });
+    };
+  }
 
+  if (dto.provider === 'VNPAY') {
     const paymentUrl = this.buildVnpayPaymentUrl({
       txnRef,
       amount: totalAmount,
@@ -207,6 +264,9 @@ export class HomeService {
       txnRef,
     };
   }
+
+  throw new BadRequestException('Invalid payment provider');
+}
 
   async handleVnpayReturn(query: Record<string, string>) {
     const redirectBase = `${this.frontendBaseUrl}/profile`;
@@ -311,6 +371,41 @@ export class HomeService {
         ),
     );
   }
+  
+  // home.service.ts
+
+async handlePaypalReturn(orderId: string): Promise<string> {
+  try {
+    // 1. Gọi PaypalService để thực hiện Capture (thu tiền thực tế)
+    const capture = await this.paypalService.captureOrder(orderId);
+
+    if (capture.status === 'COMPLETED') {
+      await this.paymentModel.findOneAndUpdate(
+        { txnRef: orderId },
+        { 
+          status: PaymentStatus.SUCCESS,
+          orderStatus: OrderStatus.COMPLETED,
+          paidAt: new Date(),
+          responseCode: '00' 
+        }
+      );
+
+      
+      return 'http://localhost:4200/payment-success?status=success';
+    } else {
+      throw new Error('Thanh toán chưa hoàn tất');
+    }
+  } catch (error) {
+    console.error('Lỗi PayPal Capture:', error);
+    
+    await this.paymentModel.findOneAndUpdate(
+      { txnRef: orderId },
+      { status: PaymentStatus.FAILED }
+    );
+    
+    return 'http://localhost:4200/payment-failed?status=failed';
+  }
+}
 
   private buildVnpayPaymentUrl(input: {
     txnRef: string;

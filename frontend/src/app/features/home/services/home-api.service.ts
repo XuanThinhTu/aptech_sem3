@@ -21,9 +21,14 @@ export interface HomeFriend {
   unreadCount: number;
 }
 
+// export interface SubscriptionCheckoutPayload {
+//   userId: string;
+//   serviceIds: string[];
+// }
 export interface SubscriptionCheckoutPayload {
   userId: string;
   serviceIds: string[];
+  provider: 'VNPAY' | 'PAYPAL'; 
 }
 
 @Injectable({ providedIn: 'root' })

@@ -256,7 +256,7 @@
         @if (checkoutErrorMessage()) {
           <p class="feedback error">{{ checkoutErrorMessage() }}</p>
         }
-
+<!-- 
         <div class="friend-dialog-actions">
           <button
             type="button"
@@ -274,7 +274,68 @@
           >
             {{ isCreatingCheckout() ? 'Redirecting to VNPay...' : 'Confirm order' }}
           </button>
-        </div>
+        </div> -->
+        <!-- Phần chọn phương thức thanh toán -->
+<div class="payment-method-selector" style="margin-bottom: 20px; padding: 0 10px;">
+  <p style="font-weight: 600; margin-bottom: 12px; color: #333;">Select Payment Method:</p>
+  
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <!-- Lựa chọn PayPal -->
+    <label 
+      [style.border-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ddd'"
+      [style.background-color]="selectedProvider() === 'PAYPAL' ? '#f0f7ff' : 'transparent'"
+      style="display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+      <input type="radio" name="paymentProvider" value="PAYPAL" 
+             [checked]="selectedProvider() === 'PAYPAL'"
+             (change)="selectedProvider.set('PAYPAL')" 
+             style="margin-right: 12px; transform: scale(1.2);">
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-weight: bold; color: #003087;">PayPal</span>
+        <small style="color: #666; font-size: 11px;">International Credit/Debit Card</small>
+      </div>
+    </label>
+
+    <!-- Lựa chọn VNPay -->
+    <label 
+      [style.border-color]="selectedProvider() === 'VNPAY' ? '#ed1c24' : '#ddd'"
+      [style.background-color]="selectedProvider() === 'VNPAY' ? '#fff5f5' : 'transparent'"
+      style="display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+      <input type="radio" name="paymentProvider" value="VNPAY" 
+             [checked]="selectedProvider() === 'VNPAY'"
+             (change)="selectedProvider.set('VNPAY')" 
+             style="margin-right: 12px; transform: scale(1.2);">
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-weight: bold; color: #ed1c24;">VNPay</span>
+        <small style="color: #666; font-size: 11px;">Local ATM / Banking App QR</small>
+      </div>
+    </label>
+  </div>
+</div>
+
+<!-- Nút bấm hành động -->
+<div class="friend-dialog-actions">
+  <button
+    type="button"
+    class="friend-dialog-button secondary"
+    [disabled]="isCreatingCheckout()"
+    (click)="closeSubscriptionDialog()"
+  >
+    Cancel
+  </button>
+  <button
+    type="button"
+    class="friend-dialog-button primary"
+    [style.background-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ed1c24'"
+    [disabled]="isCreatingCheckout()"
+    (click)="confirmSubscriptionCheckout()"
+  >
+    @if (isCreatingCheckout()) {
+      Redirecting to {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}...
+    } @else {
+      Confirm order with {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}
+    }
+  </button>
+</div>
       </div>
     </div>
   }

@@ -19,6 +19,7 @@ const user_schema_1 = require("../database/schemas/user.schema");
 const friends_module_1 = require("../friends/friends.module");
 const home_controller_1 = require("./home.controller");
 const home_service_1 = require("./home.service");
+const payment_service_1 = require("../payments/payment.service");
 let HomeModule = class HomeModule {
 };
 exports.HomeModule = HomeModule;
@@ -37,7 +38,7 @@ exports.HomeModule = HomeModule = __decorate([
             ]),
         ],
         controllers: [home_controller_1.HomeController],
-        providers: [home_service_1.HomeService],
+        providers: [home_service_1.HomeService, payment_service_1.PaypalService],
     })
 ], HomeModule);
 //# sourceMappingURL=home.module.js.map

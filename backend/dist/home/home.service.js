@@ -18,6 +18,7 @@ const config_1 = require("@nestjs/config");
 const mongoose_1 = require("@nestjs/mongoose");
 const crypto_1 = require("crypto");
 const mongoose_2 = require("mongoose");
+const payment_service_1 = require("../payments/payment.service");
 const database_enums_1 = require("../database/enums/database.enums");
 const content_service_schema_1 = require("../database/schemas/content-service.schema");
 const friendship_schema_1 = require("../database/schemas/friendship.schema");
@@ -30,6 +31,7 @@ const friends_realtime_service_1 = require("../friends/friends-realtime.service"
 let HomeService = class HomeService {
     configService;
     friendsRealtimeService;
+    paypalService;
     contentServiceModel;
     friendshipModel;
     messageModel;
@@ -46,9 +48,10 @@ let HomeService = class HomeService {
     vnpayOrderType;
     vnpayLocale;
     vnpayCurrency;
-    constructor(configService, friendsRealtimeService, contentServiceModel, friendshipModel, messageModel, paymentModel, serviceSubscriptionModel, userModel, profileModel) {
+    constructor(configService, friendsRealtimeService, paypalService, contentServiceModel, friendshipModel, messageModel, paymentModel, serviceSubscriptionModel, userModel, profileModel) {
         this.configService = configService;
         this.friendsRealtimeService = friendsRealtimeService;
+        this.paypalService = paypalService;
         this.contentServiceModel = contentServiceModel;
         this.friendshipModel = friendshipModel;
         this.messageModel = messageModel;
@@ -144,48 +147,47 @@ let HomeService = class HomeService {
         });
     }
     async createSubscriptionCheckout(dto) {
-        if (!this.vnpayTmnCode || !this.vnpayHashSecret) {
-            throw new common_1.BadRequestException('VNPAY is not configured yet.');
-        }
         const user = await this.userModel.findById(dto.userId).lean();
         if (!user) {
             throw new common_1.NotFoundException('User not found.');
         }
-        const objectIds = dto.serviceIds.map((serviceId) => new mongoose_2.Types.ObjectId(serviceId));
+        const objectIds = dto.serviceIds.map(id => new mongoose_2.Types.ObjectId(id));
         const services = await this.contentServiceModel
             .find({ _id: { $in: objectIds }, isActive: true })
             .lean();
-        if (services.length !== dto.serviceIds.length) {
-            throw new common_1.BadRequestException('One or more selected services are unavailable.');
-        }
-        const totalAmount = services.reduce((sum, service) => sum + (service.monthlyPrice ?? 0), 0);
-        if (!totalAmount) {
-            throw new common_1.BadRequestException('The selected services do not have a valid total amount.');
-        }
+        const totalAmount = services.reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0);
+        console.log('SERVICES:', services);
+        console.log('TOTAL AMOUNT:', totalAmount);
         const txnRef = this.generateTxnRef();
-        const serviceKeys = services.map((service) => service.key);
-        const serviceNames = services.map((service) => service.name);
         await this.paymentModel.create({
             userId: new mongoose_2.Types.ObjectId(dto.userId),
-            provider: database_enums_1.PaymentProvider.VNPAY,
+            provider: dto.provider,
             txnRef,
             amount: totalAmount,
             currency: this.vnpayCurrency,
             status: database_enums_1.PaymentStatus.PENDING,
             orderStatus: database_enums_1.OrderStatus.PENDING,
-            serviceTypes: serviceKeys,
-            orderInfo: `Subscription order: ${serviceNames.join(', ')}`,
-            responseCode: 'INIT',
         });
-        const paymentUrl = this.buildVnpayPaymentUrl({
-            txnRef,
-            amount: totalAmount,
-            orderInfo: `Subscription order ${txnRef}`,
-        });
-        return {
-            paymentUrl,
-            txnRef,
-        };
+        if (dto.provider === 'PAYPAL') {
+            const order = await this.paypalService.createOrder(totalAmount, txnRef);
+            const approvalLink = order.links.find((l) => l.rel === 'approve')?.href;
+            return {
+                paymentUrl: approvalLink,
+                txnRef,
+            };
+        }
+        if (dto.provider === 'VNPAY') {
+            const paymentUrl = this.buildVnpayPaymentUrl({
+                txnRef,
+                amount: totalAmount,
+                orderInfo: `Subscription order ${txnRef}`,
+            });
+            return {
+                paymentUrl,
+                txnRef,
+            };
+        }
+        throw new common_1.BadRequestException('Invalid payment provider');
     }
     async handleVnpayReturn(query) {
         const redirectBase = `${this.frontendBaseUrl}/profile`;
@@ -266,6 +268,28 @@ let HomeService = class HomeService {
             },
         }, { upsert: true })));
     }
+    async handlePaypalReturn(orderId) {
+        try {
+            const capture = await this.paypalService.captureOrder(orderId);
+            if (capture.status === 'COMPLETED') {
+                await this.paymentModel.findOneAndUpdate({ txnRef: orderId }, {
+                    status: database_enums_1.PaymentStatus.SUCCESS,
+                    orderStatus: database_enums_1.OrderStatus.COMPLETED,
+                    paidAt: new Date(),
+                    responseCode: '00'
+                });
+                return 'http://localhost:4200/payment-success?status=success';
+            }
+            else {
+                throw new Error('Thanh toán chưa hoàn tất');
+            }
+        }
+        catch (error) {
+            console.error('Lỗi PayPal Capture:', error);
+            await this.paymentModel.findOneAndUpdate({ txnRef: orderId }, { status: database_enums_1.PaymentStatus.FAILED });
+            return 'http://localhost:4200/payment-failed?status=failed';
+        }
+    }
     buildVnpayPaymentUrl(input) {
         const createDate = this.formatVnpayDate(new Date());
         const expireDate = this.formatVnpayDate(new Date(Date.now() + 15 * 60 * 1000));
@@ -313,15 +337,16 @@ let HomeService = class HomeService {
 exports.HomeService = HomeService;
 exports.HomeService = HomeService = __decorate([
     (0, common_1.Injectable)(),
-    __param(2, (0, mongoose_1.InjectModel)(content_service_schema_1.ContentService.name)),
-    __param(3, (0, mongoose_1.InjectModel)(friendship_schema_1.Friendship.name)),
-    __param(4, (0, mongoose_1.InjectModel)(message_schema_1.Message.name)),
-    __param(5, (0, mongoose_1.InjectModel)(payment_schema_1.Payment.name)),
-    __param(6, (0, mongoose_1.InjectModel)(service_subscription_schema_1.ServiceSubscription.name)),
-    __param(7, (0, mongoose_1.InjectModel)(user_schema_1.User.name)),
-    __param(8, (0, mongoose_1.InjectModel)(profile_schema_1.Profile.name)),
+    __param(3, (0, mongoose_1.InjectModel)(content_service_schema_1.ContentService.name)),
+    __param(4, (0, mongoose_1.InjectModel)(friendship_schema_1.Friendship.name)),
+    __param(5, (0, mongoose_1.InjectModel)(message_schema_1.Message.name)),
+    __param(6, (0, mongoose_1.InjectModel)(payment_schema_1.Payment.name)),
+    __param(7, (0, mongoose_1.InjectModel)(service_subscription_schema_1.ServiceSubscription.name)),
+    __param(8, (0, mongoose_1.InjectModel)(user_schema_1.User.name)),
+    __param(9, (0, mongoose_1.InjectModel)(profile_schema_1.Profile.name)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         friends_realtime_service_1.FriendsRealtimeService,
+        payment_service_1.PaypalService,
         mongoose_2.Model,
         mongoose_2.Model,
         mongoose_2.Model,

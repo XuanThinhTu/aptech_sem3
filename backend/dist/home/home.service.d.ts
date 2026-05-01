@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
+import { PaypalService } from '../payments/payment.service';
 import { ContentService } from '../database/schemas/content-service.schema';
 import { Friendship } from '../database/schemas/friendship.schema';
 import { Message } from '../database/schemas/message.schema';
@@ -12,6 +13,7 @@ import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkou
 export declare class HomeService {
     private readonly configService;
     private readonly friendsRealtimeService;
+    private readonly paypalService;
     private readonly contentServiceModel;
     private readonly friendshipModel;
     private readonly messageModel;
@@ -19,6 +21,7 @@ export declare class HomeService {
     private readonly serviceSubscriptionModel;
     private readonly userModel;
     private readonly profileModel;
+    [x: string]: any;
     private readonly backendBaseUrl;
     private readonly frontendBaseUrl;
     private readonly defaultAvatarPath;
@@ -28,7 +31,7 @@ export declare class HomeService {
     private readonly vnpayOrderType;
     private readonly vnpayLocale;
     private readonly vnpayCurrency;
-    constructor(configService: ConfigService, friendsRealtimeService: FriendsRealtimeService, contentServiceModel: Model<ContentService>, friendshipModel: Model<Friendship>, messageModel: Model<Message>, paymentModel: Model<Payment>, serviceSubscriptionModel: Model<ServiceSubscription>, userModel: Model<User>, profileModel: Model<Profile>);
+    constructor(configService: ConfigService, friendsRealtimeService: FriendsRealtimeService, paypalService: PaypalService, contentServiceModel: Model<ContentService>, friendshipModel: Model<Friendship>, messageModel: Model<Message>, paymentModel: Model<Payment>, serviceSubscriptionModel: Model<ServiceSubscription>, userModel: Model<User>, profileModel: Model<Profile>);
     getServices(): Promise<{
         id: string;
         key: string;
@@ -48,12 +51,13 @@ export declare class HomeService {
         unreadCount: number;
     }[]>;
     createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto): Promise<{
-        paymentUrl: string;
+        paymentUrl: any;
         txnRef: string;
     }>;
     handleVnpayReturn(query: Record<string, string>): Promise<string>;
     private toPublicAssetUrl;
     private createPendingSubscriptions;
+    handlePaypalReturn(orderId: string): Promise<string>;
     private buildVnpayPaymentUrl;
     private buildSortedQuery;
     private formatVnpayDate;

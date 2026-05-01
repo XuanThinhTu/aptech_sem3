@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class CreateSubscriptionCheckoutDto {
     userId;
     serviceIds;
+    provider;
 }
 exports.CreateSubscriptionCheckoutDto = CreateSubscriptionCheckoutDto;
 __decorate([
@@ -26,4 +27,8 @@ __decorate([
     (0, class_validator_1.IsMongoId)({ each: true }),
     __metadata("design:type", Array)
 ], CreateSubscriptionCheckoutDto.prototype, "serviceIds", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSubscriptionCheckoutDto.prototype, "provider", void 0);
 //# sourceMappingURL=create-subscription-checkout.dto.js.map

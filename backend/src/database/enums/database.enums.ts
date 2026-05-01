@@ -51,6 +51,7 @@ export enum SubscriptionStatus {
 
 export enum PaymentProvider {
   VNPAY = 'vnpay',
+  PAYPAL = 'PAYPAL', // thêm để test paypal
 }
 
 export enum PaymentStatus {

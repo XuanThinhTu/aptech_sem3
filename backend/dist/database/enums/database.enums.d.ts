@@ -42,7 +42,8 @@ export declare enum SubscriptionStatus {
     CANCELLED = "cancelled"
 }
 export declare enum PaymentProvider {
-    VNPAY = "vnpay"
+    VNPAY = "vnpay",
+    PAYPAL = "PAYPAL"
 }
 export declare enum PaymentStatus {
     PENDING = "pending",

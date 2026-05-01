@@ -11,7 +11,7 @@ import { ChatApiService, ChatMessage } from '../../chat/services/chat-api.servic
 import { FriendsApiService } from '../../friends/services/friends-api.service';
 import { FriendsRealtimeMessage, FriendsRealtimeService } from '../../friends/services/friends-realtime.service';
 import { FriendshipStateService } from '../../friends/services/friendship-state.service';
-import { HomeApiService, HomeFriend, HomeServiceCard } from '../services/home-api.service';
+import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload } from '../services/home-api.service';
 import { SiteLayoutComponent } from '../../../layout/site-layout.component';
 import { FriendProfileResponse, ProfileApiService } from '../../profile/services/profile-api.service';
 
@@ -33,7 +33,6 @@ export class HomePageComponent implements OnInit {
   private readonly profileApi = inject(ProfileApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-
   protected readonly currentUser = this.authState.currentUser;
   protected readonly isLoggedIn = this.authState.isLoggedIn;
   protected readonly services = signal<HomeServiceCard[]>([]);
@@ -60,6 +59,7 @@ export class HomePageComponent implements OnInit {
   protected readonly checkoutErrorMessage = signal('');
   protected readonly showSubscriptionDialog = signal(false);
   protected readonly isCreatingCheckout = signal(false);
+  protected readonly selectedProvider = signal<'VNPAY' | 'PAYPAL'>('PAYPAL');   
   protected readonly servicesCountLabel = computed(
     () => `${this.services().length} services available`,
   );
@@ -333,33 +333,66 @@ export class HomePageComponent implements OnInit {
     this.checkoutErrorMessage.set('');
   }
 
-  protected confirmSubscriptionCheckout() {
-    const user = this.currentUser();
-    const serviceIds = this.selectedServiceIds();
-    if (!user || !serviceIds.length) {
-      return;
-    }
+  // protected confirmSubscriptionCheckout() {
+  //   const user = this.currentUser();
+  //   const serviceIds = this.selectedServiceIds();
+  //   if (!user || !serviceIds.length) {
+  //     return;
+  //   }
 
-    this.isCreatingCheckout.set(true);
-    this.checkoutErrorMessage.set('');
+  //   this.isCreatingCheckout.set(true);
+  //   this.checkoutErrorMessage.set('');
 
-    this.homeApi
-      .createSubscriptionCheckout({
-        userId: user.id,
-        serviceIds,
-      })
-      .subscribe({
-        next: (response) => {
-          window.location.href = response.paymentUrl;
-        },
-        error: (error: HttpErrorResponse) => {
-          this.checkoutErrorMessage.set(
-            error.error?.message ?? 'Unable to prepare your VNPay checkout right now.',
-          );
-          this.isCreatingCheckout.set(false);
-        },
-      });
+  //   this.homeApi
+  //     .createSubscriptionCheckout({
+  //       userId: user.id,
+  //       serviceIds,
+  //     })
+  //     .subscribe({
+  //       next: (response) => {
+  //         window.location.href = response.paymentUrl;
+  //       },
+  //       error: (error: HttpErrorResponse) => {
+  //         this.checkoutErrorMessage.set(
+  //           error.error?.message ?? 'Unable to prepare your VNPay checkout right now.',
+  //         );
+  //         this.isCreatingCheckout.set(false);
+  //       },
+  //     });
+  // }
+protected confirmSubscriptionCheckout() {
+  const user = this.currentUser();
+  const serviceIds = this.selectedServiceIds();
+  const provider = this.selectedProvider(); 
+
+  if (!user || !serviceIds.length) {
+    return;
   }
+
+  this.isCreatingCheckout.set(true);
+  this.checkoutErrorMessage.set('');
+
+  this.homeApi
+    .createSubscriptionCheckout({
+      userId: user.id,
+      serviceIds,
+      provider, 
+    })
+    .subscribe({
+      next: (response) => {
+        if (response.paymentUrl) {
+          window.location.href = response.paymentUrl;
+        }
+      },
+      error: (error: HttpErrorResponse) => {
+        const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
+        this.checkoutErrorMessage.set(
+          error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`
+        );
+        this.isCreatingCheckout.set(false);
+      },
+    });
+}
 
   private loadServices() {
     this.homeApi.getServices().subscribe({

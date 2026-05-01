@@ -81,7 +81,10 @@ export class RegisterPageComponent {
   }
 
   protected requestOtp() {
+    console.log('1')
     if (this.registerForm.invalid) {
+          console.log(this.registerForm)
+
       this.registerForm.markAllAsTouched();
       return;
     }
@@ -89,11 +92,14 @@ export class RegisterPageComponent {
     if (
       this.registerForm.controls.password.getRawValue() !==
       this.registerForm.controls.confirmPassword.getRawValue()
+
     ) {
+      console.log('3')
       this.errorMessage.set('Password and confirm password do not match.');
       return;
     }
 
+    console.log('4')
     this.isSubmitting.set(true);
     this.errorMessage.set('');
     this.statusMessage.set('');

@@ -13,7 +13,7 @@ import { User, UserSchema } from '../database/schemas/user.schema';
 import { FriendsModule } from '../friends/friends.module';
 import { HomeController } from './home.controller';
 import { HomeService } from './home.service';
-
+import { PaypalService } from '../payments/payment.service'; // 
 @Module({
   imports: [
     FriendsModule,
@@ -28,6 +28,6 @@ import { HomeService } from './home.service';
     ]),
   ],
   controllers: [HomeController],
-  providers: [HomeService],
+  providers: [HomeService, PaypalService],
 })
 export class HomeModule {}

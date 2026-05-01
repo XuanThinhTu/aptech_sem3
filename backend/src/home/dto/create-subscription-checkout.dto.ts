@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsMongoId } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsMongoId, IsString } from 'class-validator';
 
 export class CreateSubscriptionCheckoutDto {
   @IsMongoId()
@@ -8,4 +8,6 @@ export class CreateSubscriptionCheckoutDto {
   @ArrayNotEmpty()
   @IsMongoId({ each: true })
   serviceIds!: string[];
+  @IsString()
+  provider!: 'VNPAY' | 'PAYPAL';
 }

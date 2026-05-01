@@ -55,6 +55,7 @@ var SubscriptionStatus;
 var PaymentProvider;
 (function (PaymentProvider) {
     PaymentProvider["VNPAY"] = "vnpay";
+    PaymentProvider["PAYPAL"] = "PAYPAL";
 })(PaymentProvider || (exports.PaymentProvider = PaymentProvider = {}));
 var PaymentStatus;
 (function (PaymentStatus) {

@@ -16,10 +16,13 @@ exports.HomeController = void 0;
 const common_1 = require("@nestjs/common");
 const create_subscription_checkout_dto_1 = require("./dto/create-subscription-checkout.dto");
 const home_service_1 = require("./home.service");
+const payment_service_1 = require("../payments/payment.service");
 let HomeController = class HomeController {
     homeService;
-    constructor(homeService) {
+    paypalService;
+    constructor(homeService, paypalService) {
         this.homeService = homeService;
+        this.paypalService = paypalService;
     }
     getServices() {
         return this.homeService.getServices();
@@ -32,6 +35,13 @@ let HomeController = class HomeController {
     }
     async handleVnpayReturn(query, res) {
         const redirectUrl = await this.homeService.handleVnpayReturn(query);
+        return res.redirect(redirectUrl);
+    }
+    async handlePaypalReturn(token, res) {
+        if (!token) {
+            return res.redirect('http://localhost:4200/profile?payment=error');
+        }
+        const redirectUrl = await this.homeService.handlePaypalReturn(token);
         return res.redirect(redirectUrl);
     }
 };
@@ -64,8 +74,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], HomeController.prototype, "handleVnpayReturn", null);
+__decorate([
+    (0, common_1.Get)('subscriptions/paypal-return'),
+    __param(0, (0, common_1.Query)('token')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], HomeController.prototype, "handlePaypalReturn", null);
 exports.HomeController = HomeController = __decorate([
     (0, common_1.Controller)('home'),
-    __metadata("design:paramtypes", [home_service_1.HomeService])
+    __metadata("design:paramtypes", [home_service_1.HomeService,
+        payment_service_1.PaypalService])
 ], HomeController);
 //# sourceMappingURL=home.controller.js.map
