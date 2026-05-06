@@ -12,7 +12,8 @@ type FriendsRealtimeEvent =
   | 'services-updated'
   | 'chat-message'
   | 'unread-counts-updated'
-  | 'conversation-read';
+  | 'conversation-read'
+  | 'group-message'
 
 @Injectable()
 export class FriendsRealtimeService {

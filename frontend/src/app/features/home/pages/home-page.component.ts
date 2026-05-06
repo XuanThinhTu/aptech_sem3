@@ -11,9 +11,10 @@ import { ChatApiService, ChatMessage } from '../../chat/services/chat-api.servic
 import { FriendsApiService } from '../../friends/services/friends-api.service';
 import { FriendsRealtimeMessage, FriendsRealtimeService } from '../../friends/services/friends-realtime.service';
 import { FriendshipStateService } from '../../friends/services/friendship-state.service';
-import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload } from '../services/home-api.service';
+import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload, HomeGroup } from '../services/home-api.service';
 import { SiteLayoutComponent } from '../../../layout/site-layout.component';
 import { FriendProfileResponse, ProfileApiService } from '../../profile/services/profile-api.service';
+
 
 @Component({
   selector: 'app-home-page',
@@ -33,6 +34,7 @@ export class HomePageComponent implements OnInit {
   private readonly profileApi = inject(ProfileApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly chatApiService = inject(ChatApiService);
   protected readonly currentUser = this.authState.currentUser;
   protected readonly isLoggedIn = this.authState.isLoggedIn;
   protected readonly services = signal<HomeServiceCard[]>([]);
@@ -50,6 +52,12 @@ export class HomePageComponent implements OnInit {
   protected readonly friendProfileLoading = signal(false);
   protected readonly friendProfileError = signal('');
   protected readonly activeChatFriend = signal<HomeFriend | null>(null);
+
+  // Nhóm
+  protected readonly groups = signal<HomeGroup[]>([]); 
+  protected readonly activeGroup = signal<HomeGroup | null>(null); 
+  protected readonly groupMessages = signal<ChatMessage[]>([]);
+
   protected readonly chatMessages = signal<ChatMessage[]>([]);
   protected readonly chatLoading = signal(false);
   protected readonly chatSending = signal(false);
@@ -60,6 +68,7 @@ export class HomePageComponent implements OnInit {
   protected readonly showSubscriptionDialog = signal(false);
   protected readonly isCreatingCheckout = signal(false);
   protected readonly selectedProvider = signal<'VNPAY' | 'PAYPAL'>('PAYPAL');   
+
   protected readonly servicesCountLabel = computed(
     () => `${this.services().length} services available`,
   );
@@ -71,11 +80,9 @@ export class HomePageComponent implements OnInit {
       if (right.unreadCount !== left.unreadCount) {
         return right.unreadCount - left.unreadCount;
       }
-
       if (left.isOnline !== right.isOnline) {
         return Number(right.isOnline) - Number(left.isOnline);
       }
-
       return left.displayName.localeCompare(right.displayName);
     }),
   );
@@ -84,7 +91,6 @@ export class HomePageComponent implements OnInit {
     if (!query) {
       return this.sortedFriends();
     }
-
     return this.sortedFriends().filter((friend) =>
       friend.displayName.toLowerCase().includes(query),
     );
@@ -117,7 +123,6 @@ export class HomePageComponent implements OnInit {
     effect(() => {
       const totalPages = this.totalFriendsPages();
       const currentPage = this.currentFriendsPage();
-
       if (currentPage > totalPages) {
         this.currentFriendsPage.set(totalPages);
       }
@@ -126,35 +131,32 @@ export class HomePageComponent implements OnInit {
     effect(() => {
       const user = this.currentUser();
       this.friendshipState.version();
-
       if (!user) {
         this.friends.set([]);
         this.friendsError.set('');
         this.friendsLoading.set(false);
+        this.groups.set([]);
         return;
       }
-
       this.loadFriends(user.id);
+      this.loadGroups();
     });
 
     this.friendsRealtime.messages$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((realtimeMessage) => {
         const user = this.currentUser();
-        if (!user) {
-          return;
-        }
-
+        if (!user) return;
         if (realtimeMessage.event === 'services-updated') {
           this.loadServices();
         }
-
         this.handleRealtimeMessage(realtimeMessage, user.id);
       });
   }
 
   ngOnInit() {
     this.loadServices();
+    this.loadGroups();
   }
 
   protected profileInitial(name: string) {
@@ -169,7 +171,6 @@ export class HomePageComponent implements OnInit {
       }
       return;
     }
-
     this.selectedServiceIds.set(current.filter((id) => id !== serviceId));
   }
 
@@ -184,10 +185,7 @@ export class HomePageComponent implements OnInit {
 
   protected openFriendProfile(friend: HomeFriend) {
     const user = this.currentUser();
-    if (!user) {
-      return;
-    }
-
+    if (!user) return;
     this.friendProfileLoading.set(true);
     this.friendProfileError.set('');
     this.friendProfileTarget.set(friend);
@@ -207,10 +205,7 @@ export class HomePageComponent implements OnInit {
   }
 
   protected closeFriendProfileDialog() {
-    if (this.friendProfileLoading()) {
-      return;
-    }
-
+    if (this.friendProfileLoading()) return;
     this.friendProfileTarget.set(null);
     this.friendProfileDetails.set(null);
     this.friendProfileError.set('');
@@ -218,10 +213,9 @@ export class HomePageComponent implements OnInit {
 
   protected openChat(friend: HomeFriend) {
     const currentFriend = this.activeChatFriend();
-    if (currentFriend?.id === friend.id) {
-      return;
-    }
+    if (currentFriend?.id === friend.id) return;
 
+    this.activeGroup.set(null); // Đóng chat nhóm nếu đang mở
     this.activeChatFriend.set(friend);
     this.chatMessages.set([]);
     this.chatError.set('');
@@ -237,9 +231,7 @@ export class HomePageComponent implements OnInit {
   protected sendChatMessage(content: string) {
     const user = this.currentUser();
     const friend = this.activeChatFriend();
-    if (!user || !friend || !content.trim()) {
-      return;
-    }
+    if (!user || !friend || !content.trim()) return;
 
     this.chatSending.set(true);
     this.chatError.set('');
@@ -258,11 +250,77 @@ export class HomePageComponent implements OnInit {
     });
   }
 
-  protected goToFriendsPage(page: number) {
-    if (page < 1 || page > this.totalFriendsPages() || page === this.currentFriendsPage()) {
-      return;
-    }
+  private loadGroups() {
+    const user = this.currentUser();
+    if (!user) return;
 
+    this.chatApiService.getUserGroups(user.id).subscribe({
+      next: (groups) => this.groups.set(groups),
+      error: (err) => console.error('Lỗi khi tải nhóm:', err)
+    });
+  }
+
+
+  protected openGroupChat(group: HomeGroup) {
+    const user = this.currentUser(); // Lấy user từ signal
+    if (!user) return;
+
+    const groupId = (group as any)._id || group.id;
+    const currentActiveId = (this.activeGroup() as any)?._id || this.activeGroup()?.id;
+
+    console.log('Đang mở Group ID:', groupId);
+
+    if (currentActiveId === groupId && groupId !== undefined) return;
+
+    this.activeChatFriend.set(null); 
+    this.activeGroup.set(group);     
+    this.groupMessages.set([]);
+    this.chatError.set('');
+    this.chatLoading.set(true);
+
+    // FIX: Truyền 2 tham số (groupId và user.id) để khớp với Service
+    this.chatApi.getGroupMessages(groupId, user.id).subscribe({
+      next: (res) => {
+        this.groupMessages.set(res.messages || []);
+        this.chatLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Lỗi tải tin nhắn:', err);
+        this.chatError.set(err.error?.message ?? 'Không thể tải tin nhắn nhóm.');
+        this.chatLoading.set(false);
+      }
+    });
+  }
+
+  protected closeGroupChat() {
+    this.activeGroup.set(null);
+    this.groupMessages.set([]);
+    this.chatError.set('');
+  }
+
+  protected sendGroupChatMessage(content: string) {
+    const user = this.currentUser();
+    const group = this.activeGroup();
+    if (!user || !group || !content.trim()) return;
+
+    const groupId = (group as any)._id || group.id; // Lấy ID chuẩn
+
+    this.chatSending.set(true);
+    // FIX: Đảm bảo truyền đúng thứ tự tham số khớp với service
+    this.chatApi.sendGroupMessage(user.id, groupId, content).subscribe({
+      next: (response) => {
+        this.groupMessages.update(msgs => [...msgs, response.chatMessage]);
+        this.chatSending.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.chatError.set(err.error?.message ?? 'Lỗi gửi tin nhắn vào nhóm.');
+        this.chatSending.set(false);
+      }
+    });
+  }
+
+  protected goToFriendsPage(page: number) {
+    if (page < 1 || page > this.totalFriendsPages() || page === this.currentFriendsPage()) return;
     this.currentFriendsPage.set(page);
   }
 
@@ -276,19 +334,14 @@ export class HomePageComponent implements OnInit {
   }
 
   protected closeRemoveFriendDialog() {
-    if (this.removingFriendId()) {
-      return;
-    }
-
+    if (this.removingFriendId()) return;
     this.friendPendingRemoval.set(null);
   }
 
   protected confirmRemoveFriend() {
     const user = this.currentUser();
     const friend = this.friendPendingRemoval();
-    if (!user || !friend) {
-      return;
-    }
+    if (!user || !friend) return;
 
     this.removingFriendId.set(friend.id);
     this.friendsApi.removeFriend(user.id, friend.id).subscribe({
@@ -308,91 +361,54 @@ export class HomePageComponent implements OnInit {
   }
 
   protected subscribeSelectedServices() {
-    const selectedCount = this.selectedServiceIds().length;
-    if (!selectedCount) {
-      return;
-    }
-
+    if (!this.selectedServiceIds().length) return;
     const user = this.currentUser();
     if (!user) {
       this.router.navigate(['/login']);
       return;
     }
-
     this.checkoutErrorMessage.set('');
     this.serviceActionMessage.set('');
     this.showSubscriptionDialog.set(true);
   }
 
   protected closeSubscriptionDialog() {
-    if (this.isCreatingCheckout()) {
-      return;
-    }
-
+    if (this.isCreatingCheckout()) return;
     this.showSubscriptionDialog.set(false);
     this.checkoutErrorMessage.set('');
   }
 
-  // protected confirmSubscriptionCheckout() {
-  //   const user = this.currentUser();
-  //   const serviceIds = this.selectedServiceIds();
-  //   if (!user || !serviceIds.length) {
-  //     return;
-  //   }
+  protected confirmSubscriptionCheckout() {
+    const user = this.currentUser();
+    const serviceIds = this.selectedServiceIds();
+    const provider = this.selectedProvider(); 
 
-  //   this.isCreatingCheckout.set(true);
-  //   this.checkoutErrorMessage.set('');
+    if (!user || !serviceIds.length) return;
 
-  //   this.homeApi
-  //     .createSubscriptionCheckout({
-  //       userId: user.id,
-  //       serviceIds,
-  //     })
-  //     .subscribe({
-  //       next: (response) => {
-  //         window.location.href = response.paymentUrl;
-  //       },
-  //       error: (error: HttpErrorResponse) => {
-  //         this.checkoutErrorMessage.set(
-  //           error.error?.message ?? 'Unable to prepare your VNPay checkout right now.',
-  //         );
-  //         this.isCreatingCheckout.set(false);
-  //       },
-  //     });
-  // }
-protected confirmSubscriptionCheckout() {
-  const user = this.currentUser();
-  const serviceIds = this.selectedServiceIds();
-  const provider = this.selectedProvider(); 
+    this.isCreatingCheckout.set(true);
+    this.checkoutErrorMessage.set('');
 
-  if (!user || !serviceIds.length) {
-    return;
+    this.homeApi
+      .createSubscriptionCheckout({
+        userId: user.id,
+        serviceIds,
+        provider, 
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.paymentUrl) {
+            window.location.href = response.paymentUrl;
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
+          this.checkoutErrorMessage.set(
+            error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`
+          );
+          this.isCreatingCheckout.set(false);
+        },
+      });
   }
-
-  this.isCreatingCheckout.set(true);
-  this.checkoutErrorMessage.set('');
-
-  this.homeApi
-    .createSubscriptionCheckout({
-      userId: user.id,
-      serviceIds,
-      provider, 
-    })
-    .subscribe({
-      next: (response) => {
-        if (response.paymentUrl) {
-          window.location.href = response.paymentUrl;
-        }
-      },
-      error: (error: HttpErrorResponse) => {
-        const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
-        this.checkoutErrorMessage.set(
-          error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`
-        );
-        this.isCreatingCheckout.set(false);
-      },
-    });
-}
 
   private loadServices() {
     this.homeApi.getServices().subscribe({
@@ -412,10 +428,7 @@ protected confirmSubscriptionCheckout() {
 
   private loadConversation(friendUserId: string) {
     const user = this.currentUser();
-    if (!user) {
-      return;
-    }
-
+    if (!user) return;
     this.chatLoading.set(true);
     this.chatError.set('');
     this.chatApi.getConversation(user.id, friendUserId).subscribe({
@@ -434,25 +447,75 @@ protected confirmSubscriptionCheckout() {
   }
 
   private loadFriends(userId: string, showLoading = true) {
-    if (showLoading) {
-      this.friendsLoading.set(true);
-    }
+    if (showLoading) this.friendsLoading.set(true);
     this.homeApi.getFriends(userId).subscribe({
       next: (friends) => {
         this.friends.set(friends);
         this.friendsError.set('');
-        if (showLoading) {
-          this.friendsLoading.set(false);
-        }
+        if (showLoading) this.friendsLoading.set(false);
       },
       error: (error: HttpErrorResponse) => {
         this.friendsError.set(
           error.error?.message ?? 'Unable to load friends right now.',
         );
-        if (showLoading) {
-          this.friendsLoading.set(false);
-        }
+        if (showLoading) this.friendsLoading.set(false);
       },
+    });
+  }
+
+  // Thêm các signal này vào class
+  protected readonly showCreateGroupModal = signal(false);
+  protected readonly newGroupTitle = signal('');
+  protected readonly selectedMemberIds = signal<string[]>([]);
+  protected readonly isCreatingGroup = signal(false);
+
+  // Hàm mở dialog
+  protected openCreateGroupDialog() {
+    this.newGroupTitle.set('');
+    this.selectedMemberIds.set([]);
+    this.showCreateGroupModal.set(true);
+  }
+
+  // Hàm đóng dialog
+  protected closeCreateGroupDialog() {
+    this.showCreateGroupModal.set(false);
+  }
+
+  // Hàm chọn/bỏ chọn thành viên
+  protected toggleMemberSelection(friendId: string) {
+    const current = this.selectedMemberIds();
+    if (current.includes(friendId)) {
+      this.selectedMemberIds.set(current.filter(id => id !== friendId));
+    } else {
+      this.selectedMemberIds.set([...current, friendId]);
+    }
+  }
+
+  protected confirmCreateGroup() {
+    const user = this.currentUser();
+    const title = this.newGroupTitle().trim();
+    
+    if (!user || !title) {
+      console.warn('Thiếu thông tin user hoặc tên nhóm');
+      return;
+    }
+
+    this.isCreatingGroup.set(true);
+
+    this.chatApi.createGroup(title, user.id, this.selectedMemberIds()).subscribe({
+      next: (response) => {
+        console.log('Tạo nhóm thành công:', response);
+        this.isCreatingGroup.set(false);
+        this.showCreateGroupModal.set(false);
+        this.loadGroups(); 
+        this.newGroupTitle.set('');
+        this.selectedMemberIds.set([]);
+      },
+      error: (err: any) => {
+        this.isCreatingGroup.set(false);
+        console.error('Lỗi khi tạo nhóm:', err);
+        alert('Không thể tạo nhóm. Vui lòng kiểm tra lại kết nối!');
+      }
     });
   }
 
@@ -461,17 +524,12 @@ protected confirmSubscriptionCheckout() {
     const payload = realtimeMessage.payload as Partial<ChatMessage> & {
       userId?: string;
       friendUserId?: string;
-      senderDisplayName?: string;
-      senderAvatarUrl?: string;
-      recipientDisplayName?: string;
-      recipientAvatarUrl?: string;
       readAt?: string | null;
     };
 
     if (realtimeMessage.event === 'chat-message') {
       if (payload.senderUserId && payload.recipientUserId) {
         const normalizedMessage = this.normalizeChatMessage(payload, userId);
-
         if (activeFriend?.id === normalizedMessage.friendUserId) {
           this.upsertChatMessage(normalizedMessage);
           if (!normalizedMessage.isOwnMessage) {
@@ -492,15 +550,12 @@ protected confirmSubscriptionCheckout() {
         );
       }
     }
-
     this.loadFriends(userId, false);
   }
 
   private markConversationRead(friendUserId: string, reloadFriends = true) {
     const user = this.currentUser();
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     this.chatApi.markConversationRead(user.id, friendUserId).subscribe({
       next: () => {
@@ -511,13 +566,9 @@ protected confirmSubscriptionCheckout() {
               : message,
           ),
         );
-        if (reloadFriends) {
-          this.loadFriends(user.id, false);
-        }
+        if (reloadFriends) this.loadFriends(user.id, false);
       },
-      error: () => {
-        // Keep the chat usable even if the read receipt update fails.
-      },
+      error: () => {}
     });
   }
 
@@ -529,10 +580,8 @@ protected confirmSubscriptionCheckout() {
         nextMessages[existingIndex] = message;
         return nextMessages;
       }
-
       return [...messages, message].sort(
-        (left, right) =>
-          new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+        (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
       );
     });
   }
@@ -541,7 +590,6 @@ protected confirmSubscriptionCheckout() {
     const senderUserId = String(payload.senderUserId ?? '');
     const recipientUserId = String(payload.recipientUserId ?? '');
     const isOwnMessage = senderUserId === currentUserId;
-
     return {
       id: String(payload.id ?? ''),
       senderUserId,
@@ -551,26 +599,11 @@ protected confirmSubscriptionCheckout() {
       createdAt: String(payload.createdAt ?? new Date().toISOString()),
       isOwnMessage,
       isRead: Boolean(payload.isRead),
-      readAt:
-        payload.readAt === null || payload.readAt === undefined
-          ? null
-          : String(payload.readAt),
-      senderDisplayName:
-        payload.senderDisplayName === undefined
-          ? undefined
-          : String(payload.senderDisplayName),
-      senderAvatarUrl:
-        payload.senderAvatarUrl === undefined
-          ? undefined
-          : String(payload.senderAvatarUrl),
-      recipientDisplayName:
-        payload.recipientDisplayName === undefined
-          ? undefined
-          : String(payload.recipientDisplayName),
-      recipientAvatarUrl:
-        payload.recipientAvatarUrl === undefined
-          ? undefined
-          : String(payload.recipientAvatarUrl),
+      readAt: !payload.readAt ? null : String(payload.readAt),
+      senderDisplayName: payload.senderDisplayName ? String(payload.senderDisplayName) : undefined,
+      senderAvatarUrl: payload.senderAvatarUrl ? String(payload.senderAvatarUrl) : undefined,
+      recipientDisplayName: payload.recipientDisplayName ? String(payload.recipientDisplayName) : undefined,
+      recipientAvatarUrl: payload.recipientAvatarUrl ? String(payload.recipientAvatarUrl) : undefined,
     };
   }
 }

@@ -31,6 +31,7 @@ var MessageRecipientType;
     MessageRecipientType["FRIEND"] = "friend";
     MessageRecipientType["CONTACT"] = "contact";
     MessageRecipientType["EXTERNAL"] = "external";
+    MessageRecipientType["GROUP"] = "group";
 })(MessageRecipientType || (exports.MessageRecipientType = MessageRecipientType = {}));
 var MessageDeliveryStatus;
 (function (MessageDeliveryStatus) {

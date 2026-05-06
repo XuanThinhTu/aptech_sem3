@@ -1,5 +1,5 @@
 import type { Server as HttpServer } from 'http';
-type FriendsRealtimeEvent = 'friend-request-created' | 'friend-request-cancelled' | 'friend-request-responded' | 'friends-updated' | 'presence-updated' | 'dashboard-overview-updated' | 'services-updated' | 'chat-message' | 'unread-counts-updated' | 'conversation-read';
+type FriendsRealtimeEvent = 'friend-request-created' | 'friend-request-cancelled' | 'friend-request-responded' | 'friends-updated' | 'presence-updated' | 'dashboard-overview-updated' | 'services-updated' | 'chat-message' | 'unread-counts-updated' | 'conversation-read' | 'group-message';
 export declare class FriendsRealtimeService {
     private static webSocketServer;
     private static readonly allConnections;

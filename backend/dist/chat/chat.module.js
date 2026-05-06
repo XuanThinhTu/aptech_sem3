@@ -13,6 +13,7 @@ const message_schema_1 = require("../database/schemas/message.schema");
 const friendship_schema_1 = require("../database/schemas/friendship.schema");
 const profile_schema_1 = require("../database/schemas/profile.schema");
 const user_schema_1 = require("../database/schemas/user.schema");
+const conversation_schema_1 = require("../database/schemas/conversation.schema");
 const friends_module_1 = require("../friends/friends.module");
 const chat_controller_1 = require("./chat.controller");
 const chat_service_1 = require("./chat.service");
@@ -28,6 +29,7 @@ exports.ChatModule = ChatModule = __decorate([
                 { name: friendship_schema_1.Friendship.name, schema: friendship_schema_1.FriendshipSchema },
                 { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
                 { name: profile_schema_1.Profile.name, schema: profile_schema_1.ProfileSchema },
+                { name: conversation_schema_1.Conversation.name, schema: conversation_schema_1.ConversationSchema },
             ]),
         ],
         controllers: [chat_controller_1.ChatController],

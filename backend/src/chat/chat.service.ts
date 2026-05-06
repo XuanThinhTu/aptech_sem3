@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -14,6 +15,7 @@ import { Friendship, FriendshipDocument } from '../database/schemas/friendship.s
 import { Message, MessageDocument } from '../database/schemas/message.schema';
 import { Profile, ProfileDocument } from '../database/schemas/profile.schema';
 import { User, UserDocument } from '../database/schemas/user.schema';
+import { Conversation, ConversationDocument } from '../database/schemas/conversation.schema';
 import { FriendsRealtimeService } from '../friends/friends-realtime.service';
 
 @Injectable()
@@ -32,6 +34,8 @@ export class ChatService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Profile.name)
     private readonly profileModel: Model<ProfileDocument>,
+    @InjectModel(Conversation.name)
+    private readonly conversationModel: Model<ConversationDocument>,
   ) {
     this.backendBaseUrl =
       this.configService.get<string>('BACKEND_BASE_URL') ?? 'http://127.0.0.1:3000';
@@ -191,6 +195,107 @@ export class ChatService {
 
     return {
       message: 'Conversation marked as read.',
+    };
+  }
+
+  async createGroup(title: string, adminId: string, memberIds: string[]) {
+    if (!Types.ObjectId.isValid(adminId)) {
+      throw new BadRequestException('Invalid admin id.');
+    }
+
+    const uniqueMemberIds = [...new Set([...memberIds, adminId])]
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    return this.conversationModel.create({
+      title: title.trim(),
+      adminId: new Types.ObjectId(adminId),
+      memberIds: uniqueMemberIds,
+      isGroup: true,
+    });
+  }
+
+  async getUserGroups(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user id.');
+    }
+    return this.conversationModel.find({
+      memberIds: new Types.ObjectId(userId)
+    }).lean();
+  }
+
+  async getGroupMessages(conversationId: string, userId: string) {
+    if (!Types.ObjectId.isValid(conversationId)) {
+      throw new BadRequestException('Invalid conversation id.');
+    }
+
+    const messages = await this.messageModel
+      .find({ conversationId: new Types.ObjectId(conversationId) })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return {
+      messages: messages.map((m) => this.toConversationMessage(m, userId)),
+    };
+  }
+
+  async sendGroupMessage(senderUserId: string, conversationId: string, content: string) {
+    if (!Types.ObjectId.isValid(senderUserId) || !Types.ObjectId.isValid(conversationId)) {
+      throw new BadRequestException('Invalid IDs.');
+    }
+
+    const conversation = await this.conversationModel.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException('Group conversation not found.');
+    }
+
+    const isMember = conversation.memberIds.some(id => String(id) === senderUserId);
+    if (!isMember) {
+      throw new ForbiddenException('You are not a member of this group.');
+    }
+
+    const sender = await this.userModel.findById(senderUserId);
+    const senderProfile = await this.profileModel.findOne({ userId: new Types.ObjectId(senderUserId) }).lean();
+
+    const message = await this.messageModel.create({
+      senderUserId: new Types.ObjectId(senderUserId),
+      conversationId: new Types.ObjectId(conversationId),
+      recipientPhoneNumber: '0000000000',
+      content: content.trim(),
+      recipientType: MessageRecipientType.GROUP,
+      deliveryStatus: MessageDeliveryStatus.SENT,
+      sentAt: new Date(),
+    });
+
+    // Tạo payload chung
+    const basePayload = {
+      id: String(message._id),
+      conversationId,
+      senderUserId,
+      content: message.content,
+      senderDisplayName: senderProfile?.name ?? sender?.username ?? 'User',
+      senderAvatarUrl: this.toPublicAssetUrl(senderProfile?.imageUrl ?? this.defaultAvatarPath),
+      createdAt: new Date().toISOString(),
+      recipientType: MessageRecipientType.GROUP
+    };
+
+    // Gửi Socket cho NHỮNG NGƯỜI KHÁC trong nhóm (lọc sender ra)
+    const otherMemberStrings = conversation.memberIds
+      .map(id => String(id))
+      .filter(id => id !== senderUserId);
+
+    if (otherMemberStrings.length > 0) {
+      this.friendsRealtimeService.emitToUsers(
+        otherMemberStrings, 
+        'group-message', 
+        { ...basePayload, isOwnMessage: false }
+      );
+    }
+
+    // Trả về cho chính người gửi qua API
+    return {
+      message: 'Group message sent successfully.',
+      chatMessage: { ...basePayload, isOwnMessage: true }
     };
   }
 

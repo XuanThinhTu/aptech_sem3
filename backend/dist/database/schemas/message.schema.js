@@ -14,11 +14,13 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const database_enums_1 = require("../enums/database.enums");
 const user_schema_1 = require("./user.schema");
+const conversation_schema_1 = require("./conversation.schema");
 let Message = class Message {
     senderUserId;
     recipientUserId;
     recipientPhoneNumber;
     recipientName;
+    conversationId;
     content;
     recipientType;
     isFree;
@@ -46,6 +48,10 @@ __decorate([
     (0, mongoose_1.Prop)({ trim: true, maxlength: 120 }),
     __metadata("design:type", String)
 ], Message.prototype, "recipientName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: mongoose_2.Schema.Types.ObjectId, ref: conversation_schema_1.Conversation.name, required: false }),
+    __metadata("design:type", mongoose_2.Types.ObjectId)
+], Message.prototype, "conversationId", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true, trim: true, maxlength: 120 }),
     __metadata("design:type", String)
@@ -91,4 +97,6 @@ exports.Message = Message = __decorate([
 exports.MessageSchema = mongoose_1.SchemaFactory.createForClass(Message);
 exports.MessageSchema.index({ senderUserId: 1, recipientPhoneNumber: 1, createdAt: -1 });
 exports.MessageSchema.index({ recipientUserId: 1, senderUserId: 1, isRead: 1, createdAt: -1 });
+exports.MessageSchema.index({ conversationId: 1, createdAt: -1 });
+exports.MessageSchema.index({ senderUserId: 1, createdAt: -1 });
 //# sourceMappingURL=message.schema.js.map

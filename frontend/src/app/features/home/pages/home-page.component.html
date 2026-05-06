@@ -84,6 +84,35 @@
               </article>
             }
           </div>
+          <!-- Chèn đoạn này vào trên hoặc dưới danh sách Friend hiện tại -->
+        <div class="panel-heading" style="margin-top: 20px;">
+          <h2>Groups</h2>
+          <button type="button" class="create-group-btn" (click)="openCreateGroupDialog()">+</button>
+        </div>
+
+<div class="group-list">
+  @for (group of groups(); track $index) {
+    <article class="friend-card group-card">
+      <button type="button" class="friend-card-main" (click)="openGroupChat(group)">
+        <div class="friend-avatar group-avatar">
+          <span>{{ group.title.substring(0, 2).toUpperCase() }}</span>
+        </div>
+        <div>
+          <h3 class="friend-name">{{ group.title }}</h3>
+          <p style="font-size: 11px; color: #666;">{{ group.memberIds.length }} members</p>
+        </div>
+      </button>
+      
+      <div class="friend-card-actions">
+        <button type="button" class="friend-message-button" (click)="openGroupChat(group)">
+          <span class="friend-message-icon">&#9993;</span>
+        </button>
+      </div>
+    </article>
+  } @empty {
+    <p class="empty-state" style="font-size: 12px;">No groups joined yet.</p>
+  }
+</div>
 
           @if (totalFriendsPages() > 1) {
             <div class="friends-pagination">
@@ -150,7 +179,7 @@
         <p class="empty-state">{{ servicesError() }}</p>
       } @else {
         <div class="services-grid">
-          @for (service of services(); track service.id) {
+          @for (service of services(); track $index) {
             <article class="service-card">
               <label class="service-check">
                 <input
@@ -473,4 +502,75 @@
       (sendMessage)="sendChatMessage($event)"
     />
   }
+  <!-- Chat cho Group -->
+@if (activeGroup(); as group) {
+  <app-chat-popup
+    [friend]="{ 
+      id: $any(group)._id, 
+      displayName: group.title, 
+      isOnline: true, 
+      avatarUrl: '' 
+    }"
+    [messages]="groupMessages()"
+    [isLoading]="chatLoading()"
+    [isSending]="chatSending()"
+    [errorMessage]="chatError()"
+    (close)="closeGroupChat()"
+    (sendMessage)="sendGroupChatMessage($event)"
+  />
+}
+@if (showCreateGroupModal()) {
+  <div class="friend-dialog-backdrop" (click)="closeCreateGroupDialog()">
+    <div class="friend-dialog" (click)="$event.stopPropagation()">
+      <h3>Tạo nhóm mới</h3>
+      <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+        Nhập tên nhóm và chọn thành viên để bắt đầu trò chuyện.
+      </p>
+
+      <div class="group-input-field" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tên nhóm:</label>
+        <input 
+          type="text" 
+          [ngModel]="newGroupTitle()" 
+          (ngModelChange)="newGroupTitle.set($event)"
+          
+          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"
+        />
+      </div>
+
+      <!-- Phần chọn thành viên (Tạm thời chọn hết bạn bè hoặc để trống) -->
+      <div class="member-selector" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
+        <p style="font-weight: 600; margin-bottom: 8px;">Chọn thành viên:</p>
+        @for (friend of friends(); track friend.id) {
+          <label style="display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              (change)="toggleMemberSelection(friend.id)"
+              [checked]="selectedMemberIds().includes(friend.id)"
+            />
+            <span>{{ friend.displayName }}</span>
+          </label>
+        }
+      </div>
+
+      <div class="friend-dialog-actions">
+        <button
+          type="button"
+          class="friend-dialog-button secondary"
+          (click)="closeCreateGroupDialog()"
+        >
+          Hủy
+        </button>
+        <button
+          type="button"
+          class="friend-dialog-button primary"
+          [disabled]="!newGroupTitle().trim() || isCreatingGroup()"
+          (click)="confirmCreateGroup()"
+        >
+          {{ isCreatingGroup() ? 'Đang tạo...' : 'Tạo nhóm' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 </app-site-layout>

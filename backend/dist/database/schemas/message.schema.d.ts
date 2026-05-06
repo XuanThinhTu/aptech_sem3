@@ -6,6 +6,7 @@ export declare class Message {
     recipientUserId?: Types.ObjectId;
     recipientPhoneNumber: string;
     recipientName?: string;
+    conversationId?: Types.ObjectId;
     content: string;
     recipientType: MessageRecipientType;
     isFree: boolean;
@@ -53,6 +54,15 @@ export declare const MessageSchema: MongooseSchema<Message, import("mongoose").M
         id: string;
     }> | undefined;
     recipientName?: import("mongoose").SchemaDefinitionProperty<string | undefined, Message, import("mongoose").Document<unknown, {}, Message, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Message & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    conversationId?: import("mongoose").SchemaDefinitionProperty<Types.ObjectId | undefined, Message, import("mongoose").Document<unknown, {}, Message, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Message & {
         _id: Types.ObjectId;

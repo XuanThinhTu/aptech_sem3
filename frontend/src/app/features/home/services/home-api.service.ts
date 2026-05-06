@@ -20,11 +20,15 @@ export interface HomeFriend {
   isOnline: boolean;
   unreadCount: number;
 }
+export interface HomeGroup {
+  id: string;
+  title: string;
+  avatarUrl?: string;
+  memberIds: string[];
+  lastMessage?: string;
+  updatedAt: string;
+}
 
-// export interface SubscriptionCheckoutPayload {
-//   userId: string;
-//   serviceIds: string[];
-// }
 export interface SubscriptionCheckoutPayload {
   userId: string;
   serviceIds: string[];
@@ -46,10 +50,30 @@ export class HomeApiService {
     });
   }
 
+  /**
+   * Lấy danh sách các nhóm mà người dùng tham gia
+   * @param userId ID của người dùng hiện tại
+   */
+  getGroups(userId: string) {
+    return this.http.get<HomeGroup[]>(`${this.apiUrl}/groups`, {
+      params: { userId },
+    });
+  }
+
   createSubscriptionCheckout(payload: SubscriptionCheckoutPayload) {
     return this.http.post<{ paymentUrl: string; txnRef: string }>(
       `${this.apiUrl}/subscriptions/checkout`,
       payload,
     );
+  }
+
+  /**
+   * (Tùy chọn) Tạo nhóm mới
+   */
+  createGroup(userId: string, groupData: { title: string, memberIds: string[] }) {
+    return this.http.post<HomeGroup>(`${this.apiUrl}/groups`, {
+      ownerId: userId,
+      ...groupData
+    });
   }
 }

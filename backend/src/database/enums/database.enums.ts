@@ -27,6 +27,7 @@ export enum MessageRecipientType {
   FRIEND = 'friend',
   CONTACT = 'contact',
   EXTERNAL = 'external',
+  GROUP = 'group',
 }
 
 export enum MessageDeliveryStatus {
@@ -51,7 +52,7 @@ export enum SubscriptionStatus {
 
 export enum PaymentProvider {
   VNPAY = 'vnpay',
-  PAYPAL = 'PAYPAL', // thêm để test paypal
+  PAYPAL = 'PAYPAL', 
 }
 
 export enum PaymentStatus {

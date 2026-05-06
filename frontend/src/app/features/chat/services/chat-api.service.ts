@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs/internal/Observable';
 
 export interface ChatMessage {
   id: string;
@@ -44,5 +45,37 @@ export class ChatApiService {
       userId,
       friendUserId,
     });
+  }
+getGroupMessages(conversationId: string, userId: string) {
+    return this.http.get<{ messages: ChatMessage[] }>(
+      `${this.apiUrl}/group/messages`, 
+      {
+        params: { conversationId, userId },
+      }
+    );
+  }
+sendGroupMessage(senderUserId: string, conversationId: string, content: string) {
+    return this.http.post<{ chatMessage: ChatMessage }>(
+      `${this.apiUrl}/group/send`, 
+      { 
+        senderUserId,   
+        conversationId, 
+        content 
+      }
+    );
+  }
+createGroup(title: string, adminId: string, memberIds: string[]): Observable<any> {
+  const url = `${this.apiUrl}/group/create`; 
+
+  const body = {
+    title: title,         
+    adminId: adminId,     
+    memberIds: memberIds 
+  };
+
+  return this.http.post(url, body);
+}
+  getUserGroups(userId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/groups/${userId}`);
   }
 }

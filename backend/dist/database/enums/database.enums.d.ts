@@ -22,7 +22,8 @@ export declare enum FriendRequestStatus {
 export declare enum MessageRecipientType {
     FRIEND = "friend",
     CONTACT = "contact",
-    EXTERNAL = "external"
+    EXTERNAL = "external",
+    GROUP = "group"
 }
 export declare enum MessageDeliveryStatus {
     QUEUED = "queued",

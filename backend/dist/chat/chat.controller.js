@@ -35,6 +35,18 @@ let ChatController = class ChatController {
     markConversationRead(dto) {
         return this.chatService.markConversationRead(dto.userId, dto.friendUserId);
     }
+    createGroup(body) {
+        return this.chatService.createGroup(body.title, body.adminId, body.memberIds);
+    }
+    getUserGroups(userId) {
+        return this.chatService.getUserGroups(userId);
+    }
+    getGroupMessages(conversationId, userId) {
+        return this.chatService.getGroupMessages(conversationId, userId);
+    }
+    sendGroupMessage(body) {
+        return this.chatService.sendGroupMessage(body.senderUserId, body.conversationId, body.content);
+    }
 };
 exports.ChatController = ChatController;
 __decorate([
@@ -65,6 +77,35 @@ __decorate([
     __metadata("design:paramtypes", [mark_read_dto_1.MarkReadDto]),
     __metadata("design:returntype", void 0)
 ], ChatController.prototype, "markConversationRead", null);
+__decorate([
+    (0, common_1.Post)('group/create'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "createGroup", null);
+__decorate([
+    (0, common_1.Get)('groups/:userId'),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "getUserGroups", null);
+__decorate([
+    (0, common_1.Get)('group/messages'),
+    __param(0, (0, common_1.Query)('conversationId')),
+    __param(1, (0, common_1.Query)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "getGroupMessages", null);
+__decorate([
+    (0, common_1.Post)('group/send'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "sendGroupMessage", null);
 exports.ChatController = ChatController = __decorate([
     (0, common_1.Controller)('chat'),
     __metadata("design:paramtypes", [chat_service_1.ChatService])
