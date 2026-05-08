@@ -92,4 +92,8 @@ createSubscriptionCheckout(@Body() dto: CreateSubscriptionCheckoutDto) {
     const redirectUrl = await this.homeService.handlePaypalReturn(token);
     return res.redirect(redirectUrl);
   }
+  @Get('subscriptions/history')
+  async getSubscriptionHistory(@Query('userId') userId: string) {
+    return this.homeService.getSubscriptionHistory(userId);
+  }
 }

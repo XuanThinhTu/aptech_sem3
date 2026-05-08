@@ -11,7 +11,7 @@ import { ChatApiService, ChatMessage } from '../../chat/services/chat-api.servic
 import { FriendsApiService } from '../../friends/services/friends-api.service';
 import { FriendsRealtimeMessage, FriendsRealtimeService } from '../../friends/services/friends-realtime.service';
 import { FriendshipStateService } from '../../friends/services/friendship-state.service';
-import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload, HomeGroup } from '../services/home-api.service';
+import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload, HomeGroup ,HomeOrder} from '../services/home-api.service';
 import { SiteLayoutComponent } from '../../../layout/site-layout.component';
 import { FriendProfileResponse, ProfileApiService } from '../../profile/services/profile-api.service';
 
@@ -52,7 +52,9 @@ export class HomePageComponent implements OnInit {
   protected readonly friendProfileLoading = signal(false);
   protected readonly friendProfileError = signal('');
   protected readonly activeChatFriend = signal<HomeFriend | null>(null);
-
+  protected readonly myOrders = signal<any[]>([]); 
+  protected readonly ordersLoading = signal(false);
+  protected readonly ordersError = signal('');
   // Nhóm
   protected readonly groups = signal<HomeGroup[]>([]); 
   protected readonly activeGroup = signal<HomeGroup | null>(null); 
@@ -157,6 +159,7 @@ export class HomePageComponent implements OnInit {
   ngOnInit() {
     this.loadServices();
     this.loadGroups();
+    this.loadOrderHistory();
   }
 
   protected profileInitial(name: string) {
@@ -291,7 +294,34 @@ export class HomePageComponent implements OnInit {
       }
     });
   }
+  private loadOrderHistory() {
+    const user = this.currentUser();
+    console.log('1. Kiểm tra User:', user); // Xem có user chưa
+    if (!user) return;
 
+    this.ordersLoading.set(true);
+    this.homeApi.getOrderHistory(user.id).subscribe({
+      next: (orders) => {
+        console.log('2. Dữ liệu từ API về nè:', orders); // <-- Dòng này cực quan trọng
+        this.myOrders.set(orders);
+        this.ordersLoading.set(false);
+      },
+      error: (err) => {
+        console.error('3. Lỗi API:', err);
+        this.ordersLoading.set(false);
+      }
+    });
+  }
+protected selectedOrder = signal<HomeOrder | null>(null);
+
+  viewOrderDetails(order: HomeOrder) {
+    this.selectedOrder.set(order);
+
+  }
+
+closeDetails() {
+  this.selectedOrder.set(null);
+}
   protected closeGroupChat() {
     this.activeGroup.set(null);
     this.groupMessages.set([]);

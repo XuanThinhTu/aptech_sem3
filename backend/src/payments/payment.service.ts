@@ -5,7 +5,6 @@ export class PaypalService {
   private client: paypal.core.PayPalHttpClient;
 
   constructor() {
-    // Thiết lập môi trường Sandbox với Key từ file .env
     const environment = new paypal.core.SandboxEnvironment(
       process.env.PAYPAL_CLIENT_ID!,
       process.env.PAYPAL_CLIENT_SECRET!,
@@ -13,7 +12,6 @@ export class PaypalService {
     this.client = new paypal.core.PayPalHttpClient(environment);
   }
 
-  // Hàm tạo đơn hàng lên PayPal
   async createOrder(amountVND: number, txnRef: string) {
     // PayPal không hỗ trợ VND, chia cho 25000 để ra USD
     const amountUSD = (amountVND / parseFloat(process.env.VNPAY_EXCHANGE_RATE!)).toFixed(2);

@@ -154,52 +154,102 @@
     }
 
     <section class="services-panel">
-      <div class="panel-heading">
-        <div>
-          <h2>Available Services</h2>
-          <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
+  <div class="panel-heading">
+    <div>
+      <h2>Available Services</h2>
+      <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
+    </div>
+    <button
+      type="button"
+      class="services-subscribe-button"
+      [disabled]="!selectedServiceIds().length"
+      (click)="subscribeSelectedServices()"
+    >
+      Subscribe selected
+    </button>
+  </div>
+
+  @if (serviceActionMessage()) {
+    <p class="services-feedback">{{ serviceActionMessage() }}</p>
+  }
+
+  @if (servicesLoading()) {
+    <p class="empty-state">Loading services...</p>
+  } @else if (servicesError()) {
+    <p class="empty-state">{{ servicesError() }}</p>
+  } @else {
+    <div class="services-grid">
+      @for (service of services(); track $index) {
+        <article class="service-card">
+          <label class="service-check">
+            <input
+              type="checkbox"
+              [checked]="isServiceSelected(service.id)"
+              (change)="toggleService(service.id, $any($event.target).checked)"
+            />
+            <span>Select</span>
+          </label>
+          <img [src]="service.imageUrl" [alt]="service.title" />
+          <div class="service-copy">
+            <h3>{{ service.title }}</h3>
+            <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
+            <p>{{ service.description }}</p>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <hr style="margin: 40px 0; border: none; border-top: 2px dashed #eee;" />
+
+  <div class="panel-heading">
+    <div>
+      <h2 style="color: #ed1c24;">Subscription History</h2>
+      <p>Theo dõi trạng thái các dịch vụ bạn đã thanh toán</p>
+    </div>
+  </div>
+
+ @if (ordersLoading()) {
+  <p class="empty-state">Loading your history...</p>
+} @else {
+  <div class="services-grid" style="margin-top: 20px;">
+    @for (order of myOrders(); track order.id) {
+      <article class="service-card" style="opacity: 0.9; border-left: 4px solid" 
+               [style.border-left-color]="order.status === 'APPROVED' ? '#52c41a' : '#faad14'">
+        
+        <div class="order-status-badge" 
+             [style.background]="order.status === 'APPROVED' ? '#f6ffed' : '#fffbe6'"
+             style="position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; border: 1px solid;"
+             [style.color]="order.status === 'APPROVED' ? '#52c41a' : '#faad14'"
+             [style.border-color]="order.status === 'APPROVED' ? '#b7eb8f' : '#ffe58f'">
+          {{ order.status }}
         </div>
-        <button
-          type="button"
-          class="services-subscribe-button"
-          [disabled]="!selectedServiceIds().length"
-          (click)="subscribeSelectedServices()"
-        >
-          Subscribe selected
-        </button>
+
+        <div class="service-copy" style="padding-top: 10px;">
+          <span style="font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1px;">
+            Mã đơn: {{ order.txnRef || 'N/A' }}
+          </span>
+          <h3 style="margin-top: 5px;">{{ order.serviceTitle || 'Dịch vụ không tên' }}</h3>
+          <strong class="service-price" style="font-size: 15px;">{{ (order.amount || 0) | number }} VND</strong>
+          
+          <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; color: #666;">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            @if (order.status === 'APPROVED') {
+              <span style="color: #52c41a; font-size: 18px;">✔</span>
+            } @else {
+              <span style="color: #faad14; font-size: 12px; font-style: italic;">Processing...</span>
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: #fafafa; border-radius: 20px;">
+        <p style="color: #999; font-size: 14px;">Bạn chưa có giao dịch nào.</p>
       </div>
-
-      @if (serviceActionMessage()) {
-        <p class="services-feedback">{{ serviceActionMessage() }}</p>
-      }
-
-      @if (servicesLoading()) {
-        <p class="empty-state">Loading services...</p>
-      } @else if (servicesError()) {
-        <p class="empty-state">{{ servicesError() }}</p>
-      } @else {
-        <div class="services-grid">
-          @for (service of services(); track $index) {
-            <article class="service-card">
-              <label class="service-check">
-                <input
-                  type="checkbox"
-                  [checked]="isServiceSelected(service.id)"
-                  (change)="toggleService(service.id, $any($event.target).checked)"
-                />
-                <span>Select</span>
-              </label>
-              <img [src]="service.imageUrl" [alt]="service.title" />
-              <div class="service-copy">
-                <h3>{{ service.title }}</h3>
-                <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
-                <p>{{ service.description }}</p>
-              </div>
-            </article>
-          }
-        </div>
-      }
-    </section>
+    }
+  </div>
+}
+</section>
   </section>
 
   @if (friendPendingRemoval(); as friendToRemove) {
@@ -324,7 +374,6 @@
       </div>
     </label>
 
-    <!-- Lựa chọn VNPay -->
     <label 
       [style.border-color]="selectedProvider() === 'VNPAY' ? '#ed1c24' : '#ddd'"
       [style.background-color]="selectedProvider() === 'VNPAY' ? '#fff5f5' : 'transparent'"
@@ -341,7 +390,6 @@
   </div>
 </div>
 
-<!-- Nút bấm hành động -->
 <div class="friend-dialog-actions">
   <button
     type="button"
@@ -528,6 +576,7 @@
     (viewMembers)="openViewMembersDialog(group)"
   />
 }
+
 @if (showCreateGroupModal()) {
   <div class="friend-dialog-backdrop" (click)="closeCreateGroupDialog()">
     <div class="friend-dialog" (click)="$event.stopPropagation()">
@@ -626,6 +675,26 @@
           Đóng
         </button>
       </div>
+    </div>
+  </div>
+}
+@if (selectedOrder()) {
+  <div class="modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" (click)="closeDetails()">
+    <div class="modal-content" style="background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px;" (click)="$event.stopPropagation()">
+      <h2 style="margin-bottom: 20px;">Chi tiết hóa đơn</h2>
+      <hr>
+      <div style="margin: 20px 0; line-height: 2;">
+        <p><strong>Mã giao dịch:</strong> {{ selectedOrder()?.txnRef }}</p>
+        <p><strong>Dịch vụ:</strong> {{ selectedOrder()?.serviceTitle }}</p>
+        <p><strong>Số tiền:</strong> {{ selectedOrder()?.amount | number }} VND</p>
+        <p><strong>Ngày thanh toán:</strong> {{ selectedOrder()?.createdAt | date:'medium' }}</p>
+        <p><strong>Trạng thái:</strong> 
+          <span [style.color]="selectedOrder()?.status === 'approved' ? '#52c41a' : '#faad14'">
+            {{ selectedOrder()?.status }}
+          </span>
+        </p>
+      </div>
+      <button (click)="closeDetails()" style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: #eee; cursor: pointer;">Đóng</button>
     </div>
   </div>
 }

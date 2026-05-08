@@ -9,7 +9,19 @@ export interface HomeServiceCard {
   imageUrl: string;
   monthlyPrice: number;
 }
-
+export interface HomeOrder {
+  id: string;
+  userId: string;
+  // serviceIds: string[]; 
+  txnRef: string;        
+  serviceTitle: string;   
+  amount: number;          
+  totalAmount: number;    
+  provider: 'VNPAY' | 'PAYPAL';
+  status: 'pending' | 'completed' | 'failed' | 'approved'; 
+  createdAt: string;
+  services?: any[]; 
+}
 export interface HomeFriend {
   id: string;
   username: string;
@@ -77,4 +89,12 @@ export class HomeApiService {
       ...groupData
     });
   }
+  getOrderHistory(userId: string) {
+    return this.http.get<HomeOrder[]>(`${this.apiUrl}/subscriptions/history`, {
+      params: { userId },
+    });
+  }
+  getOrderDetails(orderId: string) {
+  return this.http.get<HomeOrder>(`${this.apiUrl}/subscriptions/order/${orderId}`);
+}
 }

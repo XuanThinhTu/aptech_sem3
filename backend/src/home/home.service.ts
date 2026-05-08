@@ -446,6 +446,16 @@ async handlePaypalReturn(orderId: string): Promise<string> {
       .join('&');
   }
 
+    async getOrderDetail(orderId: string, userId: string) {
+      const order = await this.paymentModel.findOne({
+        _id: orderId,
+        userId: userId 
+      });
+      
+      if (!order) throw new NotFoundException('Không tìm thấy hóa đơn');
+      return order;
+    }
+      
   private formatVnpayDate(date: Date) {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, '0');
@@ -460,4 +470,25 @@ async handlePaypalReturn(orderId: string): Promise<string> {
   private generateTxnRef() {
     return `SUB${Date.now()}${randomBytes(3).toString('hex').toUpperCase()}`;
   }
+  async getSubscriptionHistory(userId: string) {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new BadRequestException('Invalid User ID');
+  }
+  
+
+  const payments = await this.paymentModel
+    .find({ userId: new Types.ObjectId(userId) })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  return payments.map((payment: any) => ({
+    id: String(payment._id),
+    txnRef: payment.txnRef,
+    serviceTitle: payment.orderInfo || `Thanh toán qua ${payment.provider}`,
+    amount: payment.amount,
+    status: payment.status,
+    createdAt: payment.createdAt ? payment.createdAt.toISOString() : new Date().toISOString(),
+  }));
+}
 }

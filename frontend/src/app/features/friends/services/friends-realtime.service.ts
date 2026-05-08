@@ -13,8 +13,10 @@ export interface FriendsRealtimeMessage {
     | 'services-updated'
     | 'chat-message'
     | 'unread-counts-updated'
-    | 'conversation-read';
-  payload: Record<string, unknown>;
+    | 'conversation-read'
+    | 'order-status-changed'
+  // payload: Record<string, unknown>;
+  payload: any;
   timestamp: string;
 }
 
