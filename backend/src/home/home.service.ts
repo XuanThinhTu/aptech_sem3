@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { createHmac, randomBytes } from 'crypto';
-import { Model, Types } from 'mongoose';
+import { Error, Model, Types } from 'mongoose';
 import { PaypalService } from '../payments/payment.service';
 import {
   OrderStatus,
@@ -211,7 +211,7 @@ export class HomeService {
   //     txnRef,
   //   };
   // }
-  async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
+async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
   const user = await this.userModel.findById(dto.userId).lean();
   if (!user) {
     throw new NotFoundException('User not found.');
@@ -222,10 +222,16 @@ export class HomeService {
     .find({ _id: { $in: objectIds }, isActive: true })
     .lean();
 
-const totalAmount = services.reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0);
+  if (!services || services.length === 0) {
+    throw new BadRequestException('No valid services selected.');
+  }
 
-console.log('SERVICES:', services);
-console.log('TOTAL AMOUNT:', totalAmount);
+  const totalAmount = services.reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0);
+  
+  if (totalAmount <= 0) {
+    throw new BadRequestException('Total amount must be greater than 0.');
+  }
+
   const txnRef = this.generateTxnRef();
 
   await this.paymentModel.create({
@@ -233,17 +239,20 @@ console.log('TOTAL AMOUNT:', totalAmount);
     provider: dto.provider as PaymentProvider,
     txnRef,
     amount: totalAmount,
-    currency: this.vnpayCurrency,
+    currency: this.vnpayCurrency || 'VND',
     status: PaymentStatus.PENDING,
     orderStatus: OrderStatus.PENDING,
+    serviceTypes: services.map(s => s.key),
+    orderInfo: `Buy: ${services.map(s => s.name).join(', ')}`,
   });
 
   if (dto.provider === 'PAYPAL') {
     const order = await this.paypalService.createOrder(totalAmount, txnRef);
+    const approvalLink = order.links.find((l: any) => l.rel === 'approve')?.href;
 
-    const approvalLink = order.links.find(
-      (l: any) => l.rel === 'approve'
-    )?.href;
+    if (!approvalLink) {
+      throw new Error('PayPal link generation failed.');
+    }
 
     return {
       paymentUrl: approvalLink,
@@ -266,7 +275,6 @@ console.log('TOTAL AMOUNT:', totalAmount);
 
   throw new BadRequestException('Invalid payment provider');
 }
-
   async handleVnpayReturn(query: Record<string, string>) {
     const redirectBase = `${this.frontendBaseUrl}/profile`;
     const secureHash = query.vnp_SecureHash;
