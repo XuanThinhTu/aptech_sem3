@@ -318,6 +318,13 @@ export class HomePageComponent implements OnInit {
       }
     });
   }
+ 
+  getMemberName(userId: string): string {
+  if (userId === this.currentUser()?.id) return 'Bạn';
+  
+  const friend = this.friends().find(f => f.id === userId);
+  return friend ? friend.displayName : `Người dùng (${userId.substring(0, 4)})`;
+}
 
   protected goToFriendsPage(page: number) {
     if (page < 1 || page > this.totalFriendsPages() || page === this.currentFriendsPage()) return;
@@ -481,7 +488,6 @@ export class HomePageComponent implements OnInit {
     this.showCreateGroupModal.set(false);
   }
 
-  // Hàm chọn/bỏ chọn thành viên
   protected toggleMemberSelection(friendId: string) {
     const current = this.selectedMemberIds();
     if (current.includes(friendId)) {
@@ -491,6 +497,61 @@ export class HomePageComponent implements OnInit {
     }
   }
 
+
+handleKickMember(event: { conversationId: string; targetUserId: string }) {
+  const currentUser = this.currentUser();
+  if (!currentUser) return;
+
+  if (confirm('Bạn có chắc chắn muốn mời thành viên này ra khỏi nhóm?')) {
+    // Gọi đến chatApiService (không phải homeApi)
+    this.chatApiService.kickGroupMember(
+      event.conversationId, 
+      event.targetUserId, 
+      currentUser.id
+    ).subscribe({
+      next: () => {
+        this.loadGroups(); // Tải lại danh sách nhóm để cập nhật số lượng tv
+        alert('Đã mời thành viên ra khỏi nhóm.');
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err.error?.message || 'Lỗi khi mời thành viên ra khỏi nhóm.');
+      }
+    });
+  }
+}
+
+groupPendingMembers = signal<any | null>(null);
+
+openViewMembersDialog(group: any) {
+  this.groupPendingMembers.set(group);
+}
+
+
+closeViewMembersDialog() {
+  this.groupPendingMembers.set(null);
+}
+
+onKickFromList(groupId: string, userId: string) {
+  this.handleKickMember({ conversationId: groupId, targetUserId: userId });
+}
+handleDisbandGroup(groupId: string) {
+  const currentUser = this.currentUser();
+  if (!currentUser) return;
+
+  if (confirm('CẢNH BÁO: Bạn có chắc chắn muốn giải tán nhóm này? Mọi tin nhắn sẽ bị xóa.')) {
+    this.chatApi.disbandGroup(groupId, currentUser.id).subscribe({
+      next: () => {
+        this.closeGroupChat();
+        this.loadGroups();     
+        alert('Nhóm đã được giải tán thành công.');
+      },
+      error: (err: HttpErrorResponse) => {
+        alert(err.error?.message || 'Lỗi khi giải tán nhóm.');
+      }
+    });
+  }
+}
   protected confirmCreateGroup() {
     const user = this.currentUser();
     const title = this.newGroupTitle().trim();
@@ -585,6 +646,7 @@ export class HomePageComponent implements OnInit {
       );
     });
   }
+  
 
   private normalizeChatMessage(payload: Partial<ChatMessage>, currentUserId: string): ChatMessage {
     const senderUserId = String(payload.senderUserId ?? '');

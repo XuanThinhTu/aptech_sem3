@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs/internal/Observable';
+import { Observable } from 'rxjs'; // Dùng RxJS chuẩn
 
 export interface ChatMessage {
   id: string;
@@ -32,11 +32,7 @@ export class ChatApiService {
   sendMessage(userId: string, friendUserId: string, content: string) {
     return this.http.post<{ message: string; chatMessage: ChatMessage }>(
       `${this.apiUrl}/send`,
-      {
-        userId,
-        friendUserId,
-        content,
-      },
+      { userId, friendUserId, content }
     );
   }
 
@@ -46,36 +42,46 @@ export class ChatApiService {
       friendUserId,
     });
   }
-getGroupMessages(conversationId: string, userId: string) {
-    return this.http.get<{ messages: ChatMessage[] }>(
-      `${this.apiUrl}/group/messages`, 
-      {
-        params: { conversationId, userId },
-      }
-    );
-  }
-sendGroupMessage(senderUserId: string, conversationId: string, content: string) {
-    return this.http.post<{ chatMessage: ChatMessage }>(
-      `${this.apiUrl}/group/send`, 
-      { 
-        senderUserId,   
-        conversationId, 
-        content 
-      }
-    );
-  }
-createGroup(title: string, adminId: string, memberIds: string[]): Observable<any> {
-  const url = `${this.apiUrl}/group/create`; 
 
-  const body = {
-    title: title,         
-    adminId: adminId,     
-    memberIds: memberIds 
-  };
-
-  return this.http.post(url, body);
-}
   getUserGroups(userId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/groups/${userId}`);
+  }
+
+  getGroupMessages(conversationId: string, userId: string) {
+    return this.http.get<{ messages: ChatMessage[] }>(
+      `${this.apiUrl}/group/messages`,
+      { params: { conversationId, userId } }
+    );
+  }
+
+  sendGroupMessage(senderUserId: string, conversationId: string, content: string) {
+    return this.http.post<{ chatMessage: ChatMessage }>(
+      `${this.apiUrl}/group/send`,
+      { senderUserId, conversationId, content }
+    );
+  }
+
+  createGroup(title: string, adminId: string, memberIds: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/group/create`, {
+      title,
+      adminId,
+      memberIds
+    });
+  }
+
+  /** 
+   */
+  kickGroupMember(conversationId: string, targetUserId: string, adminId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/group/kick`, {
+      conversationId,
+      targetUserId,
+      adminId
+    });
+  }
+
+  disbandGroup(conversationId: string, adminId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/group/disband`, {
+      body: { adminId, conversationId }
+    });
   }
 }

@@ -15,6 +15,10 @@ export interface ChatPopupFriend {
   displayName: string;
   avatarUrl: string;
   isOnline: boolean;
+  isGroup?: boolean;
+  adminId?: string;
+  conversationId?: string;
+  memberIds?: string[]; 
 }
 
 @Component({
@@ -31,13 +35,20 @@ export class ChatPopupComponent {
   readonly isLoading = input(false);
   readonly isSending = input(false);
   readonly errorMessage = input('');
+  readonly myId = input<string>('');
   readonly draft = signal('');
-
+  readonly viewMembers = output<void>();
   readonly close = output<void>();
   readonly sendMessage = output<string>();
+  readonly kickMember = output<{ conversationId: string; targetUserId: string }>();
+  readonly disbandGroup = output<string>();
 
   readonly canSend = computed(
     () => !!this.draft().trim() && !this.isSending(),
+  );
+
+  readonly isAdmin = computed(() => 
+    this.friend().isGroup === true && String(this.friend().adminId) === String(this.myId())
   );
 
   protected send() {
@@ -49,6 +60,31 @@ export class ChatPopupComponent {
     this.sendMessage.emit(content);
     this.draft.set('');
   }
+
+ protected onKick(targetUserId: string) {
+  const conversationId = this.friend().conversationId || this.friend().id; 
+  
+  if (conversationId) {
+    this.kickMember.emit({ conversationId, targetUserId });
+  } else {
+    console.error('Không tìm thấy ID của cuộc hội thoại để Kick');
+  }
+}
+protected onHeaderClick() {
+    if (this.friend().isGroup) {
+      this.viewMembers.emit();
+    }
+  }
+protected onDisband() {
+  const conversationId = this.friend().conversationId || this.friend().id;
+
+  if (conversationId) {
+    console.log('Đang emit giải tán cho ID:', conversationId);
+    this.disbandGroup.emit(conversationId);
+  } else {
+    console.error('Không tìm thấy ID của nhóm để Giải tán');
+  }
+}
 
   protected chatInitial(name: string) {
     return name.trim().charAt(0).toUpperCase();

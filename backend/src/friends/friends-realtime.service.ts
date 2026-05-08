@@ -14,6 +14,10 @@ type FriendsRealtimeEvent =
   | 'unread-counts-updated'
   | 'conversation-read'
   | 'group-message'
+  | 'kicked-from-group'
+  | 'member-kicked'
+  | 'group-disbanded'
+
 
 @Injectable()
 export class FriendsRealtimeService {

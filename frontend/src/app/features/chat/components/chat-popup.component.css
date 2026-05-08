@@ -203,6 +203,82 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.chat-popup-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-popup-disband {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  filter: grayscale(1);
+  transition: filter 0.2s;
+}
+
+.chat-popup-disband:hover {
+  filter: grayscale(0);
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chat-kick-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.chat-bubble-row:hover .chat-kick-btn {
+  opacity: 1;
+}
+
+.chat-sender-name {
+  display: block;
+  font-size: 10px;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 2px;
+}
+/* Thêm vào chat-popup.component.css */
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chat-bubble-row.own {
+  flex-direction: row-reverse; /* Đẩy tin nhắn của mình sang phải */
+}
+
+.chat-kick-btn {
+  padding: 2px 8px;
+  background-color: #fff1f0;
+  border: 1px solid #ffa39e;
+  color: #ff4d4f;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 5px;
+  transition: all 0.2s;
+}
+
+.chat-kick-btn:hover {
+  background-color: #ff4d4f;
+  color: white;
+}
 
 @media (max-width: 640px) {
   .chat-popup {

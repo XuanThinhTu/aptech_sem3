@@ -24,6 +24,7 @@ export interface HomeGroup {
   id: string;
   title: string;
   avatarUrl?: string;
+  adminId: string;   
   memberIds: string[];
   lastMessage?: string;
   updatedAt: string;

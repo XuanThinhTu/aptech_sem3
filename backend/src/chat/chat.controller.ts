@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Param, Delete } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { GetConversationDto } from './dto/get-conversation.dto';
 import { MarkReadDto } from './dto/mark-read.dto';
@@ -47,5 +47,13 @@ export class ChatController {
   @Post('group/send')
   sendGroupMessage(@Body() body: { senderUserId: string; conversationId: string; content: string }) {
     return this.chatService.sendGroupMessage(body.senderUserId, body.conversationId, body.content);
+  }
+  @Post('group/kick')
+  kickMember(@Body() body: { adminId: string; conversationId: string; targetUserId: string }) {
+    return this.chatService.kickMember(body.adminId, body.conversationId, body.targetUserId);
+  }
+  @Delete('group/disband')
+  disbandGroup(@Body() body: { adminId: string; conversationId: string }) {
+    return this.chatService.disbandGroup(body.adminId, body.conversationId);
   }
 }

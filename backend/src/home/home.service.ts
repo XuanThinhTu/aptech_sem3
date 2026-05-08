@@ -230,7 +230,7 @@ console.log('TOTAL AMOUNT:', totalAmount);
 
   await this.paymentModel.create({
     userId: new Types.ObjectId(dto.userId),
-    provider: dto.provider,
+    provider: dto.provider as PaymentProvider,
     txnRef,
     amount: totalAmount,
     currency: this.vnpayCurrency,
@@ -238,7 +238,6 @@ console.log('TOTAL AMOUNT:', totalAmount);
     orderStatus: OrderStatus.PENDING,
   });
 
-  // 🔥 FIX 2: tách theo provider
   if (dto.provider === 'PAYPAL') {
     const order = await this.paypalService.createOrder(totalAmount, txnRef);
 
@@ -372,11 +371,9 @@ console.log('TOTAL AMOUNT:', totalAmount);
     );
   }
   
-  // home.service.ts
 
 async handlePaypalReturn(orderId: string): Promise<string> {
   try {
-    // 1. Gọi PaypalService để thực hiện Capture (thu tiền thực tế)
     const capture = await this.paypalService.captureOrder(orderId);
 
     if (capture.status === 'COMPLETED') {

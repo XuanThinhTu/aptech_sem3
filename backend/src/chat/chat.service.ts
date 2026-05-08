@@ -358,6 +358,80 @@ export class ChatService {
       ),
     };
   }
+  // 1. Đuổi thành viên khỏi nhóm
+  async kickMember(adminId: string, conversationId: string, targetUserId: string) {
+    if (!Types.ObjectId.isValid(adminId) || !Types.ObjectId.isValid(conversationId) || !Types.ObjectId.isValid(targetUserId)) {
+      throw new BadRequestException('Invalid IDs provided.');
+    }
+
+    const conversation = await this.conversationModel.findById(conversationId);
+
+    if (!conversation) {
+      throw new NotFoundException('Group not found.');
+    }
+
+    // Kiểm tra quyền: Chỉ admin mới được đuổi người
+    if (String(conversation.adminId) !== adminId) {
+      throw new ForbiddenException('Only admin can kick members.');
+    }
+
+    // Không được tự đuổi chính mình (muốn rời nhóm thì dùng logic khác)
+    if (adminId === targetUserId) {
+      throw new BadRequestException('Admin cannot kick themselves. Use disband instead.');
+    }
+
+    // Thực hiện xóa member khỏi mảng memberIds
+    const updatedConversation = await this.conversationModel.findByIdAndUpdate(
+      conversationId,
+      { $pull: { memberIds: new Types.ObjectId(targetUserId) } },
+      { new: true }
+    );
+
+    this.friendsRealtimeService.emitToUsers(
+      [targetUserId],
+      'kicked-from-group',
+      { conversationId, title: conversation.title }
+    );
+
+    const remainingMembers = conversation.memberIds.map(id => String(id)).filter(id => id !== targetUserId);
+    this.friendsRealtimeService.emitToUsers(
+      remainingMembers,
+      'member-kicked',
+      { conversationId, kickedUserId: targetUserId }
+    );
+
+    return { message: 'Member kicked successfully.' };
+  }
+
+  async disbandGroup(adminId: string, conversationId: string) {
+    if (!Types.ObjectId.isValid(adminId) || !Types.ObjectId.isValid(conversationId)) {
+      throw new BadRequestException('Invalid IDs.');
+    }
+
+    const conversation = await this.conversationModel.findById(conversationId);
+
+    if (!conversation) {
+      throw new NotFoundException('Group not found.');
+    }
+
+    if (String(conversation.adminId) !== adminId) {
+      throw new ForbiddenException('Only admin can disband the group.');
+    }
+
+    const memberIdsStrings = conversation.memberIds.map(id => String(id));
+
+    await this.conversationModel.deleteOne({ _id: new Types.ObjectId(conversationId) });
+
+    await this.messageModel.deleteMany({ conversationId: new Types.ObjectId(conversationId) });
+
+    this.friendsRealtimeService.emitToUsers(
+      memberIdsStrings,
+      'group-disbanded',
+      { conversationId, title: conversation.title }
+    );
+
+    return { message: 'Group disbanded successfully.' };
+  }
 
   private toConversationMessage(
     message: Partial<Message> & {

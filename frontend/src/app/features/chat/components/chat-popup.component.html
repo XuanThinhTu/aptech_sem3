@@ -1,6 +1,11 @@
 <section class="chat-popup">
   <header class="chat-popup-header">
-    <div class="chat-popup-profile">
+    <div 
+      class="chat-popup-profile" 
+      (click)="onHeaderClick()" 
+      [style.cursor]="friend().isGroup ? 'pointer' : 'default'"
+      [title]="friend().isGroup ? 'Xem danh sách thành viên' : ''"
+    >
       <div class="chat-popup-avatar">
         @if (friend().avatarUrl) {
           <img [src]="friend().avatarUrl" [alt]="friend().displayName" />
@@ -13,14 +18,30 @@
         <h3>{{ friend().displayName }}</h3>
         <p>
           <span class="chat-popup-status" [class.online]="friend().isOnline"></span>
-          {{ friend().isOnline ? 'Online now' : 'Offline' }}
+          @if (friend().isGroup) {
+            {{ friend().memberIds?.length || 0 }} thành viên
+          } @else {
+            {{ friend().isOnline ? 'Online now' : 'Offline' }}
+          }
         </p>
       </div>
     </div>
 
-    <button type="button" class="chat-popup-close" (click)="close.emit()">
-      x
-    </button>
+    <div class="chat-popup-controls">
+      @if (isAdmin()) {
+        <button 
+          type="button" 
+          class="chat-popup-disband" 
+          (click)="onDisband()" 
+          title="Giải tán nhóm">
+          Disband 
+        </button>
+      }
+      
+      <button type="button" class="chat-popup-close" (click)="close.emit()">
+        Close
+      </button>
+    </div>
   </header>
 
   <div class="chat-popup-body">
@@ -36,7 +57,21 @@
       <div class="chat-popup-messages">
         @for (message of messages(); track message.id) {
           <article class="chat-bubble-row" [class.own]="message.isOwnMessage">
+            
+            @if (isAdmin() && !message.isOwnMessage) {
+              <button 
+                type="button" 
+                class="chat-kick-btn" 
+                (click)="onKick(message.senderUserId)" 
+                title="Đuổi thành viên">
+                Kick 
+              </button>
+            }
+
             <div class="chat-bubble">
+              @if (friend().isGroup && !message.isOwnMessage) {
+                <span class="chat-sender-name">{{ message.senderDisplayName }}</span>
+              }
               <p>{{ message.content }}</p>
               <div class="chat-bubble-meta">
                 <span>{{ messageTime(message.createdAt) }}</span>
