@@ -11,6 +11,7 @@
   overflow: hidden;
 }
 
+/* HEADER & FOOTER */
 .chat-popup-header,
 .chat-popup-footer {
   padding: 16px 18px;
@@ -50,20 +51,14 @@
   object-fit: cover;
 }
 
-.chat-popup-profile h3,
-.chat-popup-profile p,
-.chat-bubble p,
-.chat-bubble-meta,
-.chat-popup-state {
-  margin: 0;
-}
-
 .chat-popup-profile h3 {
+  margin: 0;
   color: #281a12;
   font-size: 1rem;
 }
 
 .chat-popup-profile p {
+  margin: 0;
   color: #765f4d;
   font-size: 0.86rem;
   display: inline-flex;
@@ -83,35 +78,15 @@
   box-shadow: 0 0 0 4px rgba(45, 178, 76, 0.14);
 }
 
-.chat-popup-close {
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(140, 63, 29, 0.08);
-  color: #7b4522;
-  font-weight: 800;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
+/* BODY & MESSAGES */
 .chat-popup-body {
   min-height: 320px;
   max-height: 420px;
-  overflow: auto;
+  overflow-y: auto;
   padding: 16px;
   background:
     radial-gradient(circle at top right, rgba(255, 213, 164, 0.16), transparent 24%),
     linear-gradient(180deg, #fffdf8 0%, #fbf5eb 100%);
-}
-
-.chat-popup-state {
-  color: #705847;
-  line-height: 1.5;
-}
-
-.chat-popup-state.error {
-  color: #9d2c2c;
 }
 
 .chat-popup-messages {
@@ -120,17 +95,21 @@
   gap: 12px;
 }
 
+/* QUAN TRỌNG: Cấu trúc dòng tin nhắn */
 .chat-bubble-row {
   display: flex;
-  justify-content: flex-start;
+  align-items: flex-start; /* Để nút Kick và Bubble thẳng hàng đỉnh */
+  gap: 8px;
+  width: 100%;
+  justify-content: flex-start; /* Mặc định bên trái */
 }
 
 .chat-bubble-row.own {
-  justify-content: flex-end;
+  justify-content: flex-end; /* Đẩy tin nhắn của mình sang phải */
 }
 
 .chat-bubble {
-  max-width: 78%;
+  max-width: 75%;
   padding: 12px 14px;
   border-radius: 18px 18px 18px 8px;
   background: rgba(255, 255, 255, 0.95);
@@ -145,6 +124,7 @@
 }
 
 .chat-bubble p {
+  margin: 0;
   line-height: 1.45;
   word-break: break-word;
 }
@@ -152,12 +132,48 @@
 .chat-bubble-meta {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
   font-size: 0.76rem;
   opacity: 0.78;
 }
 
+/* CONTROLS (Kick, Disband, Close) */
+.chat-popup-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-kick-btn {
+  padding: 4px 8px;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+  color: #ff4d4f;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0; /* Hiện khi hover vào row */
+  transition: opacity 0.2s;
+  align-self: center;
+}
+
+.chat-bubble-row:hover .chat-kick-btn {
+  opacity: 1;
+}
+
+.chat-popup-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(140, 63, 29, 0.08);
+  color: #7b4522;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* FOOTER & INPUT */
 .chat-popup-footer {
   display: flex;
   align-items: flex-end;
@@ -183,9 +199,6 @@
   background: transparent;
   color: #2a1d14;
   font: inherit;
-}
-
-.chat-composer textarea:focus {
   outline: none;
 }
 
@@ -203,83 +216,8 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.chat-popup-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
-.chat-popup-disband {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 4px;
-  filter: grayscale(1);
-  transition: filter 0.2s;
-}
-
-.chat-popup-disband:hover {
-  filter: grayscale(0);
-}
-
-.chat-bubble-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.chat-kick-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.chat-bubble-row:hover .chat-kick-btn {
-  opacity: 1;
-}
-
-.chat-sender-name {
-  display: block;
-  font-size: 10px;
-  font-weight: bold;
-  color: #666;
-  margin-bottom: 2px;
-}
-/* Thêm vào chat-popup.component.css */
-.chat-bubble-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.chat-bubble-row.own {
-  flex-direction: row-reverse; /* Đẩy tin nhắn của mình sang phải */
-}
-
-.chat-kick-btn {
-  padding: 2px 8px;
-  background-color: #fff1f0;
-  border: 1px solid #ffa39e;
-  color: #ff4d4f;
-  border-radius: 4px;
-  font-size: 11px;
-  cursor: pointer;
-  margin-top: 5px;
-  transition: all 0.2s;
-}
-
-.chat-kick-btn:hover {
-  background-color: #ff4d4f;
-  color: white;
-}
-
+/* MOBILE RESPONSIVE */
 @media (max-width: 640px) {
   .chat-popup {
     right: 12px;

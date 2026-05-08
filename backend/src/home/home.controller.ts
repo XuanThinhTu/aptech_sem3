@@ -47,17 +47,17 @@
 //   return res.redirect(redirectUrl);
 // }
 // }
-// home.controller.ts
+
 import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkout.dto';
 import { HomeService } from './home.service';
-import { PaypalService } from '../payments/payment.service'; // Đảm bảo đúng đường dẫn tới PaypalService của bạn
+import { PaypalService } from '../payments/payment.service';
 
 @Controller('home')
 export class HomeController {
   constructor(
     private readonly homeService: HomeService,
-    private readonly paypalService: PaypalService // Inject PaypalService vào đây
+    private readonly paypalService: PaypalService 
   ) {}
 
   @Get('services')

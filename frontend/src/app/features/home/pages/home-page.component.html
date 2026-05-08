@@ -261,24 +261,30 @@
           list?
         </p>
 
-        <div class="friend-dialog-actions">
-          <button
-            type="button"
-            class="friend-dialog-button secondary"
-            [disabled]="!!removingFriendId()"
-            (click)="closeRemoveFriendDialog()"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="friend-dialog-button danger"
-            [disabled]="removingFriendId() === friendToRemove.id"
-            (click)="confirmRemoveFriend()"
-          >
-            {{ removingFriendId() === friendToRemove.id ? 'Removing...' : 'Remove' }}
-          </button>
-        </div>
+      <div class="friend-dialog-actions" style="margin-top: 20px;">
+  <button
+    type="button"
+    class="friend-dialog-button secondary"
+    [disabled]="isCreatingCheckout()"
+    (click)="closeSubscriptionDialog()"
+  >
+    Cancel
+  </button>
+
+  <button
+    type="button"
+    class="friend-dialog-button primary"
+    [style.background-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ed1c24'"
+    [disabled]="isCreatingCheckout() || !selectedProvider()"
+    (click)="confirmSubscriptionCheckout()"
+  >
+    @if (isCreatingCheckout()) {
+      Redirecting to {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}...
+    } @else {
+      Confirm order with {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}
+    }
+  </button>
+</div>
       </div>
     </div>
   }
