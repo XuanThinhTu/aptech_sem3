@@ -1,290 +1,538 @@
 <app-site-layout>
-  <section class="content-grid" [class.single-column]="!isLoggedIn()">
-    @if (isLoggedIn()) {
-      <aside class="friends-panel">
-        <div class="panel-heading">
-          <h2>Friends</h2>
-          <p>{{ connectedFriendsCount() }} connected</p>
-        </div>
-
-        @if (friendsLoading()) {
-          <p class="empty-state">Loading your friend list...</p>
-        } @else if (friendsError()) {
-          <p class="empty-state">{{ friendsError() }}</p>
-        } @else if (!friends().length) {
-          <p class="empty-state">
-            You have not connected with any friends yet. Your friend list will appear here after
-            you start building your network.
-          </p>
-        } @else {
-          <label class="friends-search-shell">
-            <span class="friends-search-icon">Search</span>
-            <input
-              type="search"
-              [ngModel]="friendsSearchQuery()"
-              (ngModelChange)="onFriendsSearchChange($event)"
-              placeholder="Find a friend by name"
-            />
-          </label>
-
-          @if (!filteredFriends().length) {
-            <p class="empty-state friend-empty-state">
-              No friends matched your search.
-            </p>
-          } @else {
-          <div class="friend-list">
-            @for (friend of paginatedFriends(); track friend.id) {
-              <article class="friend-card">
-                <button
-                  type="button"
-                  class="friend-card-main"
-                  (click)="openFriendProfile(friend)"
-                >
-                  <div class="friend-avatar">
-                    @if (friend.avatarUrl) {
-                      <img [src]="friend.avatarUrl" [alt]="friend.displayName" />
-                    } @else {
-                      <span>{{ profileInitial(friend.displayName) }}</span>
-                    }
-                  </div>
-                  <div>
-                    <h3 class="friend-name">
-                      <span
-                        class="friend-status-badge"
-                        [class.online]="friend.isOnline"
-                        [class.offline]="!friend.isOnline"
-                      ></span>
-                      {{ friend.displayName }}
-                    </h3>
-                  </div>
-                </button>
-
-                <div class="friend-card-actions">
-                  <button
-                    type="button"
-                    class="friend-message-button"
-                    [class.has-unread]="shouldShowUnreadBadge(friend)"
-                    (click)="openChat(friend)"
-                  >
-                    <span class="friend-message-icon" aria-hidden="true">&#9993;</span>
-                    @if (shouldShowUnreadBadge(friend)) {
-                      <span class="friend-message-badge">{{ friend.unreadCount }}</span>
-                    }
-                  </button>
-
-                  <button
-                    type="button"
-                    class="friend-remove-button"
-                    [disabled]="removingFriendId() === friend.id"
-                    (click)="openRemoveFriendDialog(friend)"
-                  >
-                    {{ removingFriendId() === friend.id ? '...' : 'x' }}
-                  </button>
-                </div>
-              </article>
-            }
-          </div>
-          <!-- Chèn đoạn này vào trên hoặc dưới danh sách Friend hiện tại -->
-        <div class="panel-heading" style="margin-top: 20px;">
-          <h2>Groups</h2>
-          <button type="button" class="create-group-btn" (click)="openCreateGroupDialog()">+</button>
-        </div>
-
-<div class="group-list">
-  @for (group of groups(); track $index) {
-    <article class="friend-card group-card">
-      <button type="button" class="friend-card-main" (click)="openGroupChat(group)">
-        <div class="friend-avatar group-avatar">
-          <span>{{ group.title.substring(0, 2).toUpperCase() }}</span>
-        </div>
-        <div>
-          <h3 class="friend-name">{{ group.title }}</h3>
-          <p style="font-size: 11px; color: #666;">{{ group.memberIds.length }} members</p>
-        </div>
-      </button>
-      
-      <div class="friend-card-actions">
-        <button type="button" class="friend-message-button" (click)="openGroupChat(group)">
-          <span class="friend-message-icon">&#9993;</span>
-        </button>
+  <main class="home-workspace">
+    <section class="home-hero-card">
+      <div>
+        <p class="home-eyebrow">SMS Connect Home</p>
+        <h1>Hi, {{ currentUser()?.username || 'there' }}</h1>
+        <p>
+          Choose a workspace below to focus on friends, groups, premium services, or your
+          subscription history.
+        </p>
       </div>
-    </article>
-  } @empty {
-    <p class="empty-state" style="font-size: 12px;">No groups joined yet.</p>
-  }
-</div>
 
-          @if (totalFriendsPages() > 1) {
-            <div class="friends-pagination">
-              <button
-                type="button"
-                class="pagination-button pagination-nav"
-                [disabled]="currentFriendsPage() === 1"
-                (click)="goToFriendsPage(currentFriendsPage() - 1)"
-              >
-                Prev
-              </button>
+      @if (isLoggedIn()) {
+        <div class="home-summary-strip">
+          <div>
+            <strong>{{ connectedFriendsCount() }}</strong>
+            <span>Connected friends</span>
+          </div>
 
-              <div class="pagination-pages">
-                @for (page of friendPageNumbers(); track page) {
-                  <button
-                    type="button"
-                    class="pagination-button"
-                    [class.active]="page === currentFriendsPage()"
-                    (click)="goToFriendsPage(page)"
-                  >
-                    {{ page }}
-                  </button>
+          <div>
+            <strong>{{ servicesCountLabel() }}</strong>
+            <span>Available services</span>
+          </div>
+
+          <div>
+            <strong>{{ selectedServicesLabel() }}</strong>
+            <span>Current selection</span>
+          </div>
+        </div>
+      }
+    </section>
+
+    <nav class="home-tabbar" aria-label="Home workspace navigation">
+      @if (isLoggedIn()) {
+        <button
+          type="button"
+          class="home-tab"
+          [class.active]="activeHomeView() === 'messages'"
+          (click)="activeHomeView.set('messages')"
+        >
+          <span>Messages</span>
+          <small>Friends & Groups</small>
+        </button>
+      }
+
+      <button
+        type="button"
+        class="home-tab"
+        [class.active]="activeHomeView() === 'services'"
+        (click)="activeHomeView.set('services')"
+      >
+        <span>Services</span>
+        <small>Premium content</small>
+      </button>
+
+      <button
+        type="button"
+        class="home-tab"
+        [class.active]="activeHomeView() === 'history'"
+        (click)="activeHomeView.set('history')"
+      >
+        <span>History</span>
+        <small>Orders & payment</small>
+      </button>
+    </nav>
+
+    <section class="home-view-panel">
+      @switch (activeHomeView()) {
+        @case ('messages') {
+          @if (isLoggedIn()) {
+            <section class="messenger-workspace">
+              <aside class="messenger-sidebar">
+                <section class="messenger-panel friends-section">
+                  <div class="section-header">
+                    <div>
+                      <p class="section-eyebrow">Social Hub</p>
+                      <h2>Friends</h2>
+                      <p>{{ connectedFriendsCount() }} connected</p>
+                    </div>
+                  </div>
+
+                  @if (friendsLoading()) {
+                    <p class="empty-state">Loading your friend list...</p>
+                  } @else if (friendsError()) {
+                    <p class="empty-state">{{ friendsError() }}</p>
+                  } @else if (!friends().length) {
+                    <p class="empty-state">You have not connected with any friends yet.</p>
+                  } @else {
+                    <label class="friends-search-shell">
+                      <span class="friends-search-icon">Search</span>
+                      <input
+                        type="search"
+                        [ngModel]="friendsSearchQuery()"
+                        (ngModelChange)="onFriendsSearchChange($event)"
+                        placeholder="Find a friend by name"
+                      />
+                    </label>
+
+                    @if (!filteredFriends().length) {
+                      <p class="empty-state friend-empty-state">No friends matched your search.</p>
+                    } @else {
+                      <div class="messenger-list">
+                        @for (friend of paginatedFriends(); track friend.id) {
+                          <article
+                            class="messenger-row"
+                            [class.active]="activeChatFriend()?.id === friend.id"
+                            [class.has-unread]="shouldShowUnreadBadge(friend)"
+                          >
+                            <button
+                              type="button"
+                              class="messenger-row-main"
+                              (click)="openChat(friend)"
+                            >
+                              <div class="friend-avatar">
+                                @if (friend.avatarUrl) {
+                                  <img [src]="friend.avatarUrl" [alt]="friend.displayName" />
+                                } @else {
+                                  <span>{{ profileInitial(friend.displayName) }}</span>
+                                }
+
+                                @if (shouldShowUnreadBadge(friend)) {
+                                  <span class="friend-unread-badge">{{ friend.unreadCount }}</span>
+                                }
+                              </div>
+
+                              <div class="friend-copy">
+                                <h3 class="friend-name">
+                                  <span
+                                    class="friend-status-badge"
+                                    [class.online]="friend.isOnline"
+                                    [class.offline]="!friend.isOnline"
+                                  ></span>
+                                  {{ friend.displayName }}
+                                </h3>
+
+                                <p class="messenger-preview">
+                                  {{ friend.isOnline ? 'Online now' : 'Offline' }}
+                                </p>
+                              </div>
+                            </button>
+
+                            <div class="friend-card-actions">
+                              <button
+                                type="button"
+                                class="friend-remove-button"
+                                [disabled]="removingFriendId() === friend.id"
+                                (click)="openRemoveFriendDialog(friend)"
+                              >
+                                {{ removingFriendId() === friend.id ? '...' : '×' }}
+                              </button>
+                            </div>
+                          </article>
+                        }
+                      </div>
+
+                      @if (totalFriendsPages() > 1) {
+                        <div class="friends-pagination">
+                          <button
+                            type="button"
+                            class="pagination-button pagination-nav"
+                            [disabled]="currentFriendsPage() === 1"
+                            (click)="goToFriendsPage(currentFriendsPage() - 1)"
+                          >
+                            Prev
+                          </button>
+
+                          <div class="pagination-pages">
+                            @for (page of friendPageNumbers(); track page) {
+                              <button
+                                type="button"
+                                class="pagination-button"
+                                [class.active]="page === currentFriendsPage()"
+                                (click)="goToFriendsPage(page)"
+                              >
+                                {{ page }}
+                              </button>
+                            }
+                          </div>
+
+                          <button
+                            type="button"
+                            class="pagination-button pagination-nav"
+                            [disabled]="currentFriendsPage() === totalFriendsPages()"
+                            (click)="goToFriendsPage(currentFriendsPage() + 1)"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      }
+                    }
+                  }
+                </section>
+
+                <section class="messenger-panel groups-section">
+                  <div class="section-header">
+                    <div>
+                      <p class="section-eyebrow">Community</p>
+                      <h2>Groups</h2>
+                      <p>Group conversations</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="create-group-btn"
+                      (click)="openCreateGroupDialog()"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <div class="messenger-list">
+                    @for (group of groups(); track $index) {
+                      <article
+                        class="messenger-row group-card"
+                        [class.active]="
+                          activeGroup()?.id === group.id ||
+                          $any(activeGroup())?._id === $any(group)._id
+                        "
+                      >
+                        <button
+                          type="button"
+                          class="messenger-row-main"
+                          (click)="openGroupChat(group)"
+                        >
+                          <div class="friend-avatar group-avatar">
+                            <span>{{ group.title.substring(0, 2).toUpperCase() }}</span>
+                          </div>
+
+                          <div class="friend-copy">
+                            <h3 class="friend-name">{{ group.title }}</h3>
+                            <p class="messenger-preview">{{ group.memberIds.length }} members</p>
+                          </div>
+                        </button>
+                      </article>
+                    } @empty {
+                      <p class="empty-state group-empty-state">No groups joined yet.</p>
+                    }
+                  </div>
+                </section>
+              </aside>
+
+              <section class="messenger-chat-dock">
+                @if (activeChatFriend(); as chatFriend) {
+                  <app-chat-popup
+                    [friend]="chatFriend"
+                    [myId]="currentUser()?.id || ''"
+                    [messages]="chatMessages()"
+                    [isLoading]="chatLoading()"
+                    [isSending]="chatSending()"
+                    [errorMessage]="chatError()"
+                    (close)="closeChat()"
+                    (sendMessage)="sendChatMessage($event)"
+                  />
+                } @else if (activeGroup(); as group) {
+                  <app-chat-popup
+                    [friend]="{
+                      id: $any(group)._id || group.id,
+                      displayName: group.title,
+                      isOnline: true,
+                      avatarUrl: '',
+                      isGroup: true,
+                      adminId: group.adminId,
+                      memberIds: group.memberIds,
+                      conversationId: $any(group)._id || group.id,
+                    }"
+                    [myId]="currentUser()?.id || ''"
+                    [messages]="groupMessages()"
+                    [isLoading]="chatLoading()"
+                    [isSending]="chatSending()"
+                    [errorMessage]="chatError()"
+                    (close)="closeGroupChat()"
+                    (sendMessage)="sendGroupChatMessage($event)"
+                    (kickMember)="handleKickMember($event)"
+                    (disbandGroup)="handleDisbandGroup($event)"
+                    (viewMembers)="openViewMembersDialog(group)"
+                  />
+                } @else {
+                  <div class="empty-chat-state">
+                    <div class="empty-chat-icon">💬</div>
+                    <h2>Select a conversation</h2>
+                    <p>Choose a friend or group from the left panel to start messaging.</p>
+                  </div>
                 }
+              </section>
+            </section>
+          } @else {
+            <section class="home-card">
+              <h2>Please sign in to view your friends and groups.</h2>
+            </section>
+          }
+        }
+
+        @case ('services') {
+          <section class="home-card services-section">
+            <div class="section-header services-header">
+              <div>
+                <p class="section-eyebrow">Marketplace</p>
+                <h2>Available Services</h2>
+                <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
               </div>
 
               <button
                 type="button"
-                class="pagination-button pagination-nav"
-                [disabled]="currentFriendsPage() === totalFriendsPages()"
-                (click)="goToFriendsPage(currentFriendsPage() + 1)"
+                class="services-subscribe-button"
+                [disabled]="!selectedServiceIds().length"
+                (click)="subscribeSelectedServices()"
               >
-                Next
+                Subscribe selected
               </button>
             </div>
-          }
-          }
-        }
-      </aside>
-    }
 
-    <section class="services-panel">
-  <div class="panel-heading">
-    <div>
-      <h2>Available Services</h2>
-      <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
-    </div>
-    <button
-      type="button"
-      class="services-subscribe-button"
-      [disabled]="!selectedServiceIds().length"
-      (click)="subscribeSelectedServices()"
-    >
-      Subscribe selected
-    </button>
-  </div>
-
-  @if (serviceActionMessage()) {
-    <p class="services-feedback">{{ serviceActionMessage() }}</p>
-  }
-
-  @if (servicesLoading()) {
-    <p class="empty-state">Loading services...</p>
-  } @else if (servicesError()) {
-    <p class="empty-state">{{ servicesError() }}</p>
-  } @else {
-    <div class="services-grid">
-      @for (service of services(); track $index) {
-        <article class="service-card">
-          <label class="service-check">
-            <input
-              type="checkbox"
-              [checked]="isServiceSelected(service.id)"
-              (change)="toggleService(service.id, $any($event.target).checked)"
-            />
-            <span>Select</span>
-          </label>
-          <img [src]="service.imageUrl" [alt]="service.title" />
-          <div class="service-copy">
-            <h3>{{ service.title }}</h3>
-            <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
-            <p>{{ service.description }}</p>
-          </div>
-        </article>
-      }
-    </div>
-  }
-
-  <hr style="margin: 40px 0; border: none; border-top: 2px dashed #eee;" />
-
-  <div class="panel-heading">
-    <div>
-      <h2 style="color: #ed1c24;">Subscription History</h2>
-      
-    </div>
-  </div>
-
- @if (ordersLoading()) {
-  <p class="empty-state">Loading your history...</p>
-} @else {
-  <div class="services-grid" style="margin-top: 20px;">
-    @for (order of myOrders(); track order.id) {
-      <article class="service-card" style="opacity: 0.9; border-left: 4px solid" 
-               [style.border-left-color]="order.status === 'APPROVED' ? '#52c41a' : '#faad14'">
-        
-        <div class="order-status-badge" 
-             [style.background]="order.status === 'APPROVED' ? '#f6ffed' : '#fffbe6'"
-             style="position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; border: 1px solid;"
-             [style.color]="order.status === 'APPROVED' ? '#52c41a' : '#faad14'"
-             [style.border-color]="order.status === 'APPROVED' ? '#b7eb8f' : '#ffe58f'">
-          {{ order.status }}
-        </div>
-
-        <div class="service-copy" style="padding-top: 10px;">
-          <span style="font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1px;">
-            Mã đơn: {{ order.txnRef || 'N/A' }}
-          </span>
-          <h3 style="margin-top: 5px;">{{ order.serviceTitle || 'Dịch vụ không tên' }}</h3>
-          <strong class="service-price" style="font-size: 15px;">{{ (order.amount || 0) | number }} VND</strong>
-          
-          <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #666;">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-            @if (order.status === 'APPROVED') {
-              <span style="color: #52c41a; font-size: 18px;">✔</span>
-            } @else {
-              <span style="color: #faad14; font-size: 12px; font-style: italic;">Processing...</span>
+            @if (serviceActionMessage()) {
+              <p class="services-feedback">{{ serviceActionMessage() }}</p>
             }
-          </div>
-        </div>
-      </article>
-    } @empty {
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: #fafafa; border-radius: 20px;">
-        <p style="color: #999; font-size: 14px;">Bạn chưa có giao dịch nào.</p>
-      </div>
-    }
-  </div>
-}
-</section>
-  </section>
 
+            @if (servicesLoading()) {
+              <p class="empty-state">Loading services...</p>
+            } @else if (servicesError()) {
+              <p class="empty-state">{{ servicesError() }}</p>
+            } @else {
+              <div class="services-grid">
+                @for (service of services(); track $index) {
+                  <article class="service-card">
+                    <label class="service-check">
+                      <input
+                        type="checkbox"
+                        [checked]="isServiceSelected(service.id)"
+                        (change)="toggleService(service.id, $any($event.target).checked)"
+                      />
+                      <span>Select</span>
+                    </label>
+
+                    <img [src]="service.imageUrl" [alt]="service.title" />
+
+                    <div class="service-copy">
+                      <h3>{{ service.title }}</h3>
+                      <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
+                      <p>{{ service.description }}</p>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @case ('history') {
+          <section class="history-workspace">
+            <section class="history-hero home-card">
+              <div>
+                <p class="section-eyebrow">Billing Center</p>
+                <h2>Subscription History</h2>
+                <p>Track service orders, payment status, and recent subscription activities.</p>
+              </div>
+
+              <div class="history-kpi-grid">
+                <div class="history-kpi-card">
+                  <span>Total orders</span>
+                  <strong>{{ myOrders().length }}</strong>
+                </div>
+
+                <div class="history-kpi-card success">
+                  <span>Approved</span>
+                  <strong>{{ approvedOrdersCount() }}</strong>
+                </div>
+
+                <div class="history-kpi-card pending">
+                  <span>Pending</span>
+                  <strong>{{ pendingOrdersCount() }}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="history-table-card home-card">
+              <div class="history-toolbar">
+                <div>
+                  <h3>Order records</h3>
+                  <p>
+                    Showing {{ paginatedOrders().length }} of {{ filteredOrders().length }} orders
+                  </p>
+                </div>
+
+                <div class="history-filter-tabs">
+                  <button
+                    type="button"
+                    [class.active]="historyStatusFilter() === 'ALL'"
+                    (click)="setHistoryFilter('ALL')"
+                  >
+                    All
+                  </button>
+
+                  <button
+                    type="button"
+                    [class.active]="historyStatusFilter() === 'APPROVED'"
+                    (click)="setHistoryFilter('APPROVED')"
+                  >
+                    Approved
+                  </button>
+
+                  <button
+                    type="button"
+                    [class.active]="historyStatusFilter() === 'PENDING'"
+                    (click)="setHistoryFilter('PENDING')"
+                  >
+                    Pending
+                  </button>
+                </div>
+              </div>
+
+              @if (ordersLoading()) {
+                <p class="empty-state">Loading your history...</p>
+              } @else {
+                <div class="history-list">
+                  @for (order of paginatedOrders(); track order.id) {
+                    <article
+                      class="history-record"
+                      [class.approved]="order.status === 'APPROVED'"
+                      [class.pending]="order.status !== 'APPROVED'"
+                    >
+                      <div class="history-record-main">
+                        <div class="history-record-icon">
+                          @if (order.status === 'APPROVED') {
+                            <span>✓</span>
+                          } @else {
+                            <span>•</span>
+                          }
+                        </div>
+
+                        <div>
+                          <span class="order-ref">Mã đơn: {{ order.txnRef || 'N/A' }}</span>
+                          <h3>{{ order.serviceTitle || 'Dịch vụ không tên' }}</h3>
+                          <p>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+                        </div>
+                      </div>
+
+                      <div class="history-record-amount">
+                        <strong>{{ order.amount || 0 | number }} VND</strong>
+                        <span
+                          class="order-status-badge"
+                          [class.approved]="order.status === 'APPROVED'"
+                          [class.pending]="order.status !== 'APPROVED'"
+                        >
+                          {{ order.status === 'APPROVED' ? 'Approved' : 'Pending' }}
+                        </span>
+                      </div>
+
+                      <div class="history-record-action">
+                        @if (order.status === 'APPROVED') {
+                          <span class="history-action-text approved">Completed</span>
+                        } @else {
+                          <span class="history-action-text pending">Processing</span>
+                        }
+                      </div>
+                    </article>
+                  } @empty {
+                    <div class="empty-history-card">
+                      <h3>No orders found</h3>
+                      <p>There are no subscription records matching this filter.</p>
+                    </div>
+                  }
+                </div>
+
+                @if (filteredOrders().length > historyPageSize) {
+                  <div class="history-pagination">
+                    <button
+                      type="button"
+                      class="history-page-button"
+                      [disabled]="historyPage() === 1"
+                      (click)="goToHistoryPage(historyPage() - 1)"
+                    >
+                      Previous
+                    </button>
+
+                    <div class="history-page-list">
+                      @for (page of historyPageNumbers(); track page) {
+                        <button
+                          type="button"
+                          class="history-page-number"
+                          [class.active]="page === historyPage()"
+                          (click)="goToHistoryPage(page)"
+                        >
+                          {{ page }}
+                        </button>
+                      }
+                    </div>
+
+                    <button
+                      type="button"
+                      class="history-page-button"
+                      [disabled]="historyPage() === totalHistoryPages()"
+                      (click)="goToHistoryPage(historyPage() + 1)"
+                    >
+                      Next
+                    </button>
+                  </div>
+                }
+              }
+            </section>
+          </section>
+        }
+      }
+    </section>
+  </main>
   @if (friendPendingRemoval(); as friendToRemove) {
     <div class="friend-dialog-backdrop" (click)="closeRemoveFriendDialog()">
-      <div class="friend-dialog" (click)="$event.stopPropagation()">
+      <div class="friend-dialog remove-friend-dialog" (click)="$event.stopPropagation()">
+        <div class="remove-dialog-icon">!</div>
+
         <h3>Remove friend?</h3>
+
         <p>
-          Do you want to remove <strong>{{ friendToRemove.displayName }}</strong> from your friends
-          list?
+          Do you want to remove
+          <strong>{{ friendToRemove.displayName }}</strong>
+          from your friends list?
         </p>
 
-      <div class="friend-dialog-actions" style="margin-top: 20px;">
-  <button
-    type="button"
-    class="friend-dialog-button secondary"
-    [disabled]="isCreatingCheckout()"
-    (click)="closeSubscriptionDialog()"
-  >
-    Cancel
-  </button>
+        <div class="friend-dialog-actions">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            [disabled]="removingFriendId() === friendToRemove.id"
+            (click)="closeRemoveFriendDialog()"
+          >
+            Cancel
+          </button>
 
-  <button
-    type="button"
-    class="friend-dialog-button primary"
-    [style.background-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ed1c24'"
-    [disabled]="isCreatingCheckout() || !selectedProvider()"
-    (click)="confirmSubscriptionCheckout()"
-  >
-    @if (isCreatingCheckout()) {
-      Redirecting to {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}...
-    } @else {
-      Confirm order with {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}
-    }
-  </button>
-</div>
+          <button
+            type="button"
+            class="friend-dialog-button danger"
+            [disabled]="removingFriendId() === friendToRemove.id"
+            (click)="confirmRemoveFriend()"
+          >
+            {{ removingFriendId() === friendToRemove.id ? 'Removing...' : 'Remove friend' }}
+          </button>
+        </div>
       </div>
     </div>
   }
@@ -341,7 +589,7 @@
         @if (checkoutErrorMessage()) {
           <p class="feedback error">{{ checkoutErrorMessage() }}</p>
         }
-<!-- 
+        <!-- 
         <div class="friend-dialog-actions">
           <button
             type="button"
@@ -361,64 +609,90 @@
           </button>
         </div> -->
         <!-- Phần chọn phương thức thanh toán -->
-<div class="payment-method-selector" style="margin-bottom: 20px; padding: 0 10px;">
-  <p style="font-weight: 600; margin-bottom: 12px; color: #333;">Select Payment Method:</p>
-  
-  <div style="display: flex; flex-direction: column; gap: 10px;">
-    <!-- Lựa chọn PayPal -->
-    <label 
-      [style.border-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ddd'"
-      [style.background-color]="selectedProvider() === 'PAYPAL' ? '#f0f7ff' : 'transparent'"
-      style="display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-      <input type="radio" name="paymentProvider" value="PAYPAL" 
-             [checked]="selectedProvider() === 'PAYPAL'"
-             (change)="selectedProvider.set('PAYPAL')" 
-             style="margin-right: 12px; transform: scale(1.2);">
-      <div style="display: flex; flex-direction: column;">
-        <span style="font-weight: bold; color: #003087;">PayPal</span>
-        <small style="color: #666; font-size: 11px;">International Credit/Debit Card</small>
-      </div>
-    </label>
+        <div class="payment-method-selector" style="margin-bottom: 20px; padding: 0 10px">
+          <p style="font-weight: 600; margin-bottom: 12px; color: #333">Select Payment Method:</p>
 
-    <label 
-      [style.border-color]="selectedProvider() === 'VNPAY' ? '#ed1c24' : '#ddd'"
-      [style.background-color]="selectedProvider() === 'VNPAY' ? '#fff5f5' : 'transparent'"
-      style="display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-      <input type="radio" name="paymentProvider" value="VNPAY" 
-             [checked]="selectedProvider() === 'VNPAY'"
-             (change)="selectedProvider.set('VNPAY')" 
-             style="margin-right: 12px; transform: scale(1.2);">
-      <div style="display: flex; flex-direction: column;">
-        <span style="font-weight: bold; color: #ed1c24;">VNPay</span>
-        <small style="color: #666; font-size: 11px;">Local ATM / Banking App QR</small>
-      </div>
-    </label>
-  </div>
-</div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <!-- Lựa chọn PayPal -->
+            <label
+              [style.border-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ddd'"
+              [style.background-color]="selectedProvider() === 'PAYPAL' ? '#f0f7ff' : 'transparent'"
+              style="
+                display: flex;
+                align-items: center;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+              "
+            >
+              <input
+                type="radio"
+                name="paymentProvider"
+                value="PAYPAL"
+                [checked]="selectedProvider() === 'PAYPAL'"
+                (change)="selectedProvider.set('PAYPAL')"
+                style="margin-right: 12px; transform: scale(1.2)"
+              />
+              <div style="display: flex; flex-direction: column">
+                <span style="font-weight: bold; color: #003087">PayPal</span>
+                <small style="color: #666; font-size: 11px">International Credit/Debit Card</small>
+              </div>
+            </label>
 
-<div class="friend-dialog-actions">
-  <button
-    type="button"
-    class="friend-dialog-button secondary"
-    [disabled]="isCreatingCheckout()"
-    (click)="closeSubscriptionDialog()"
-  >
-    Cancel
-  </button>
-  <button
-    type="button"
-    class="friend-dialog-button primary"
-    [style.background-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ed1c24'"
-    [disabled]="isCreatingCheckout()"
-    (click)="confirmSubscriptionCheckout()"
-  >
-    @if (isCreatingCheckout()) {
-      Redirecting to {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}...
-    } @else {
-      Confirm order with {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}
-    }
-  </button>
-</div>
+            <label
+              [style.border-color]="selectedProvider() === 'VNPAY' ? '#ed1c24' : '#ddd'"
+              [style.background-color]="selectedProvider() === 'VNPAY' ? '#fff5f5' : 'transparent'"
+              style="
+                display: flex;
+                align-items: center;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+              "
+            >
+              <input
+                type="radio"
+                name="paymentProvider"
+                value="VNPAY"
+                [checked]="selectedProvider() === 'VNPAY'"
+                (change)="selectedProvider.set('VNPAY')"
+                style="margin-right: 12px; transform: scale(1.2)"
+              />
+              <div style="display: flex; flex-direction: column">
+                <span style="font-weight: bold; color: #ed1c24">VNPay</span>
+                <small style="color: #666; font-size: 11px">Local ATM / Banking App QR</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="friend-dialog-actions">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            [disabled]="isCreatingCheckout()"
+            (click)="closeSubscriptionDialog()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="friend-dialog-button primary"
+            [style.background-color]="selectedProvider() === 'PAYPAL' ? '#0070ba' : '#ed1c24'"
+            [disabled]="isCreatingCheckout()"
+            (click)="confirmSubscriptionCheckout()"
+          >
+            @if (isCreatingCheckout()) {
+              Redirecting to {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}...
+            } @else {
+              Confirm order with {{ selectedProvider() === 'PAYPAL' ? 'PayPal' : 'VNPay' }}
+            }
+          </button>
+        </div>
       </div>
     </div>
   }
@@ -443,7 +717,10 @@
           <div class="friend-profile-header">
             <div class="friend-profile-avatar">
               @if (friendProfile.friend.avatarUrl) {
-                <img [src]="friendProfile.friend.avatarUrl" [alt]="friendProfile.friend.displayName" />
+                <img
+                  [src]="friendProfile.friend.avatarUrl"
+                  [alt]="friendProfile.friend.displayName"
+                />
               } @else {
                 <span>{{ profileInitial(friendProfile.friend.displayName) }}</span>
               }
@@ -495,23 +772,43 @@
             </div>
             <div class="friend-profile-info">
               <span>Hobbies</span>
-              <strong>{{ friendProfile.profile.hobbies.length ? friendProfile.profile.hobbies.join(', ') : 'Not updated' }}</strong>
+              <strong>{{
+                friendProfile.profile.hobbies.length
+                  ? friendProfile.profile.hobbies.join(', ')
+                  : 'Not updated'
+              }}</strong>
             </div>
             <div class="friend-profile-info">
               <span>Likes</span>
-              <strong>{{ friendProfile.profile.likes.length ? friendProfile.profile.likes.join(', ') : 'Not updated' }}</strong>
+              <strong>{{
+                friendProfile.profile.likes.length
+                  ? friendProfile.profile.likes.join(', ')
+                  : 'Not updated'
+              }}</strong>
             </div>
             <div class="friend-profile-info">
               <span>Dislikes</span>
-              <strong>{{ friendProfile.profile.dislikes.length ? friendProfile.profile.dislikes.join(', ') : 'Not updated' }}</strong>
+              <strong>{{
+                friendProfile.profile.dislikes.length
+                  ? friendProfile.profile.dislikes.join(', ')
+                  : 'Not updated'
+              }}</strong>
             </div>
             <div class="friend-profile-info">
               <span>Cuisines</span>
-              <strong>{{ friendProfile.profile.cuisines.length ? friendProfile.profile.cuisines.join(', ') : 'Not updated' }}</strong>
+              <strong>{{
+                friendProfile.profile.cuisines.length
+                  ? friendProfile.profile.cuisines.join(', ')
+                  : 'Not updated'
+              }}</strong>
             </div>
             <div class="friend-profile-info">
               <span>Sports</span>
-              <strong>{{ friendProfile.profile.sports.length ? friendProfile.profile.sports.join(', ') : 'Not updated' }}</strong>
+              <strong>{{
+                friendProfile.profile.sports.length
+                  ? friendProfile.profile.sports.join(', ')
+                  : 'Not updated'
+              }}</strong>
             </div>
             <div class="friend-profile-info">
               <span>Qualification</span>
@@ -545,163 +842,212 @@
     </div>
   }
 
-  @if (activeChatFriend(); as chatFriend) {
-    <app-chat-popup
-      [friend]="chatFriend"
-      [myId]="currentUser()?.id || ''"
-      [messages]="chatMessages()"
-      [isLoading]="chatLoading()"
-      [isSending]="chatSending()"
-      [errorMessage]="chatError()"
-      (close)="closeChat()"
-      (sendMessage)="sendChatMessage($event)"
-    />
-  }
-@if (activeGroup(); as group) {
-  <app-chat-popup
-    [friend]="{ 
-      id: $any(group)._id || group.id, 
-      displayName: group.title, 
-      isOnline: true, 
-      avatarUrl: '',
-      isGroup: true,
-      adminId: group.adminId,
-      memberIds: group.memberIds,
-      conversationId: $any(group)._id || group.id
-    }"
-    [myId]="currentUser()?.id || ''"
-    [messages]="groupMessages()"
-    [isLoading]="chatLoading()"
-    [isSending]="chatSending()"
-    [errorMessage]="chatError()"
-    
-    (close)="closeGroupChat()"
-    (sendMessage)="sendGroupChatMessage($event)"
-    (kickMember)="handleKickMember($event)"
-    (disbandGroup)="handleDisbandGroup($event)"
-    (viewMembers)="openViewMembersDialog(group)"
-  />
-}
+  @if (showCreateGroupModal()) {
+    <div class="friend-dialog-backdrop" (click)="closeCreateGroupDialog()">
+      <div class="friend-dialog" (click)="$event.stopPropagation()">
+        <h3>Tạo nhóm mới</h3>
+        <p style="font-size: 13px; color: #666; margin-bottom: 15px">
+          Nhập tên nhóm và chọn thành viên để bắt đầu trò chuyện.
+        </p>
 
-@if (showCreateGroupModal()) {
-  <div class="friend-dialog-backdrop" (click)="closeCreateGroupDialog()">
-    <div class="friend-dialog" (click)="$event.stopPropagation()">
-      <h3>Tạo nhóm mới</h3>
-      <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
-        Nhập tên nhóm và chọn thành viên để bắt đầu trò chuyện.
-      </p>
+        <div class="group-input-field" style="margin-bottom: 20px">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px">Tên nhóm:</label>
+          <input
+            type="text"
+            [ngModel]="newGroupTitle()"
+            (ngModelChange)="newGroupTitle.set($event)"
+            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px"
+          />
+        </div>
 
-      <div class="group-input-field" style="margin-bottom: 20px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tên nhóm:</label>
-        <input 
-          type="text" 
-          [ngModel]="newGroupTitle()" 
-          (ngModelChange)="newGroupTitle.set($event)"
-          
-          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"
-        />
-      </div>
-
-      <div class="member-selector" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
-        <p style="font-weight: 600; margin-bottom: 8px;">Chọn thành viên:</p>
-        @for (friend of friends(); track friend.id) {
-          <label style="display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer;">
-            <input 
-              type="checkbox" 
-              (change)="toggleMemberSelection(friend.id)"
-              [checked]="selectedMemberIds().includes(friend.id)"
-            />
-            <span>{{ friend.displayName }}</span>
-          </label>
-        }
-      </div>
-
-      <div class="friend-dialog-actions">
-        <button
-          type="button"
-          class="friend-dialog-button secondary"
-          (click)="closeCreateGroupDialog()"
+        <div
+          class="member-selector"
+          style="max-height: 200px; overflow-y: auto; margin-bottom: 20px"
         >
-          Hủy
-        </button>
-        <button
-          type="button"
-          class="friend-dialog-button primary"
-          [disabled]="!newGroupTitle().trim() || isCreatingGroup()"
-          (click)="confirmCreateGroup()"
-        >
-          {{ isCreatingGroup() ? 'Đang tạo...' : 'Tạo nhóm' }}
-        </button>
+          <p style="font-weight: 600; margin-bottom: 8px">Chọn thành viên:</p>
+          @for (friend of friends(); track friend.id) {
+            <label
+              style="display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer"
+            >
+              <input
+                type="checkbox"
+                (change)="toggleMemberSelection(friend.id)"
+                [checked]="selectedMemberIds().includes(friend.id)"
+              />
+              <span>{{ friend.displayName }}</span>
+            </label>
+          }
+        </div>
+
+        <div class="friend-dialog-actions">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            (click)="closeCreateGroupDialog()"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            class="friend-dialog-button primary"
+            [disabled]="!newGroupTitle().trim() || isCreatingGroup()"
+            (click)="confirmCreateGroup()"
+          >
+            {{ isCreatingGroup() ? 'Đang tạo...' : 'Tạo nhóm' }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-}
+  }
 
-@if (groupPendingMembers(); as selectedGroup) {
-  <div class="friend-dialog-backdrop" (click)="closeViewMembersDialog()">
-    <div class="friend-dialog" (click)="$event.stopPropagation()" style="max-width: 400px; border-radius: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0; font-size: 18px;">Thành viên nhóm</h3>
-        <button (click)="closeViewMembersDialog()" style="background: none; border: none; cursor: pointer; font-size: 20px;">&times;</button>
-      </div>
+  @if (groupPendingMembers(); as selectedGroup) {
+    <div class="friend-dialog-backdrop" (click)="closeViewMembersDialog()">
+      <div
+        class="friend-dialog"
+        (click)="$event.stopPropagation()"
+        style="max-width: 400px; border-radius: 12px"
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          "
+        >
+          <h3 style="margin: 0; font-size: 18px">Thành viên nhóm</h3>
+          <button
+            (click)="closeViewMembersDialog()"
+            style="background: none; border: none; cursor: pointer; font-size: 20px"
+          >
+            &times;
+          </button>
+        </div>
 
-      <div style="max-height: 300px; overflow-y: auto; background: #f9f9f9; border-radius: 8px; padding: 5px;">
-        @for (mId of selectedGroup.memberIds; track mId) {
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">
-                Member
+        <div
+          style="
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 5px;
+          "
+        >
+          @for (mId of selectedGroup.memberIds; track mId) {
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div
+                  style="
+                    width: 32px;
+                    height: 32px;
+                    background: #ddd;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                  "
+                >
+                  Member
+                </div>
+                <div style="display: flex; flex-direction: column">
+                  <span style="font-size: 13px; font-weight: 500">
+                    {{ getMemberName(mId) }}
+                  </span>
+                  @if (mId === selectedGroup.adminId) {
+                    <span style="font-size: 10px; color: #1890ff">Admin group</span>
+                  }
+                </div>
               </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 13px; font-weight: 500;">
-                 {{ getMemberName(mId) }}
-                </span>
-                @if (mId === selectedGroup.adminId) {
-                  <span style="font-size: 10px; color: #1890ff;">Admin group</span>
-                }
-              </div>
+
+              @if (selectedGroup.adminId === currentUser()?.id && mId !== currentUser()?.id) {
+                <button
+                  type="button"
+                  (click)="onKickFromList(selectedGroup._id || selectedGroup.id, mId)"
+                  style="
+                    padding: 4px 8px;
+                    background: #fff1f0;
+                    color: #ff4d4f;
+                    border: 1px solid #ffa39e;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    cursor: pointer;
+                  "
+                >
+                  Kick
+                </button>
+              }
             </div>
+          }
+        </div>
 
-            
-            @if (selectedGroup.adminId === currentUser()?.id && mId !== currentUser()?.id) {
-              <button 
-                type="button"
-                (click)="onKickFromList(selectedGroup._id || selectedGroup.id, mId)"
-                style="padding: 4px 8px; background: #fff1f0; color: #ff4d4f; border: 1px solid #ffa39e; border-radius: 4px; font-size: 11px; cursor: pointer;"
-              >
-                Kick
-              </button>
-            }
-          </div>
-        }
+        <div class="friend-dialog-actions" style="margin-top: 15px">
+          <button
+            type="button"
+            class="friend-dialog-button secondary"
+            (click)="closeViewMembersDialog()"
+          >
+            Đóng
+          </button>
+        </div>
       </div>
-
-      <div class="friend-dialog-actions" style="margin-top: 15px;">
-        <button type="button" class="friend-dialog-button secondary" (click)="closeViewMembersDialog()">
+    </div>
+  }
+  @if (selectedOrder()) {
+    <div
+      class="modal-backdrop"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      "
+      (click)="closeDetails()"
+    >
+      <div
+        class="modal-content"
+        style="background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 style="margin-bottom: 20px">Chi tiết hóa đơn</h2>
+        <hr />
+        <div style="margin: 20px 0; line-height: 2">
+          <p><strong>Mã giao dịch:</strong> {{ selectedOrder()?.txnRef }}</p>
+          <p><strong>Dịch vụ:</strong> {{ selectedOrder()?.serviceTitle }}</p>
+          <p><strong>Số tiền:</strong> {{ selectedOrder()?.amount | number }} VND</p>
+          <p><strong>Ngày thanh toán:</strong> {{ selectedOrder()?.createdAt | date: 'medium' }}</p>
+          <p>
+            <strong>Trạng thái:</strong>
+            <span [style.color]="selectedOrder()?.status === 'approved' ? '#52c41a' : '#faad14'">
+              {{ selectedOrder()?.status }}
+            </span>
+          </p>
+        </div>
+        <button
+          (click)="closeDetails()"
+          style="
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: #eee;
+            cursor: pointer;
+          "
+        >
           Đóng
         </button>
       </div>
     </div>
-  </div>
-}
-@if (selectedOrder()) {
-  <div class="modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" (click)="closeDetails()">
-    <div class="modal-content" style="background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px;" (click)="$event.stopPropagation()">
-      <h2 style="margin-bottom: 20px;">Chi tiết hóa đơn</h2>
-      <hr>
-      <div style="margin: 20px 0; line-height: 2;">
-        <p><strong>Mã giao dịch:</strong> {{ selectedOrder()?.txnRef }}</p>
-        <p><strong>Dịch vụ:</strong> {{ selectedOrder()?.serviceTitle }}</p>
-        <p><strong>Số tiền:</strong> {{ selectedOrder()?.amount | number }} VND</p>
-        <p><strong>Ngày thanh toán:</strong> {{ selectedOrder()?.createdAt | date:'medium' }}</p>
-        <p><strong>Trạng thái:</strong> 
-          <span [style.color]="selectedOrder()?.status === 'approved' ? '#52c41a' : '#faad14'">
-            {{ selectedOrder()?.status }}
-          </span>
-        </p>
-      </div>
-      <button (click)="closeDetails()" style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: #eee; cursor: pointer;">Đóng</button>
-    </div>
-  </div>
-}
+  }
 </app-site-layout>

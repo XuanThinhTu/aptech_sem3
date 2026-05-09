@@ -1,141 +1,183 @@
 <main class="site-shell">
-  <header class="site-header">
-    <div class="site-header-inner">
+  <header class="global-nav">
+    <div class="nav-container">
       <a [routerLink]="brandRoute()" class="brand-link">
-        <div class="brand">
-          <div class="brand-logo">
+        <div class="brand-cluster">
+          <div class="brand-avatar">
             @if (isLoggedIn() && currentUser()?.avatarUrl) {
               <img [src]="currentUser()!.avatarUrl" [alt]="currentUser()!.displayName" />
             } @else {
-              <span class="brand-mark"></span>
+              <span class="brand-mark">S</span>
             }
           </div>
-          <div>
-            <p class="brand-title">SMS Connect</p>
+
+          <div class="brand-text">
+            <h1 class="brand-title">SMS Connect</h1>
             @if (isLoggedIn()) {
-              <p class="brand-subtitle brand-status">
-                <span class="online-badge"></span>
+              <p class="brand-subtitle status-connected">
+                <span class="online-indicator"></span>
                 connected
               </p>
             } @else {
-              <p class="brand-subtitle">Online messaging social website</p>
+              <p class="brand-subtitle">Online SMS social web</p>
             }
           </div>
         </div>
       </a>
 
       @if (isLoggedIn() && showFriendSearch()) {
-        <div class="friend-search">
-          <label class="search-shell">
-            <span class="search-icon">Search</span>
+        <div class="nav-search-module">
+          <div class="search-input-pill">
+            <svg
+              class="icon-search"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+
             <input
               type="search"
               [ngModel]="searchQuery()"
               (ngModelChange)="onSearchChange($event)"
-              placeholder="Find friends by name or phone"
+              placeholder="Find friends by name or phone..."
             />
-          </label>
+          </div>
 
           @if (searchQuery().trim()) {
-            <div class="search-results">
+            <div class="dropdown-card search-dropdown">
               @if (searchLoading()) {
-                <p class="search-state">Searching accounts...</p>
+                <p class="state-message">Searching accounts...</p>
               } @else if (searchError()) {
-                <p class="search-state error">{{ searchError() }}</p>
+                <p class="state-message error-text">{{ searchError() }}</p>
               } @else if (!searchResults().length) {
-                <p class="search-state">No matching accounts found.</p>
+                <p class="state-message">No matching accounts found.</p>
               } @else {
-                @for (result of searchResults(); track result.id) {
-                  <article class="search-result-item">
-                    <div class="search-result-avatar">
-                      @if (result.avatarUrl) {
-                        <img [src]="result.avatarUrl" [alt]="result.displayName" />
-                      } @else {
-                        <span>{{ profileInitial(result.displayName) }}</span>
-                      }
-                    </div>
+                <div class="result-list">
+                  @for (result of searchResults(); track result.id) {
+                    <article class="user-row">
+                      <div class="user-avatar">
+                        @if (result.avatarUrl) {
+                          <img [src]="result.avatarUrl" [alt]="result.displayName" />
+                        } @else {
+                          <span>{{ profileInitial(result.displayName) }}</span>
+                        }
+                      </div>
 
-                    <div class="search-result-copy">
-                      <h3>{{ result.displayName }}</h3>
-                    </div>
+                      <div class="user-info">
+                        <h3>{{ result.displayName }}</h3>
+                      </div>
 
-                    @if (isSearchActionButton(result)) {
-                      <button
-                        type="button"
-                        class="search-add-button"
-                        [disabled]="sendingRequestId() === result.id"
-                        [class.cancel]="result.relationshipStatus === 'pending_sent'"
-                        (click)="result.relationshipStatus === 'pending_sent' ? cancelFriendRequest(result) : sendFriendRequest(result)"
-                      >
-                        {{ sendingRequestId() === result.id ? '...' : searchActionLabel(result) }}
-                      </button>
-                    } @else if (result.relationshipStatus === 'pending_received' || result.relationshipStatus === 'friends') {
-                      <span class="search-status-pill">{{ searchActionLabel(result) }}</span>
-                    }
-                  </article>
-                }
+                      <div class="user-action">
+                        @if (isSearchActionButton(result)) {
+                          <button
+                            type="button"
+                            class="pill-button"
+                            [disabled]="sendingRequestId() === result.id"
+                            [class.primary-filled]="result.relationshipStatus !== 'pending_sent'"
+                            [class.dark-outlined]="result.relationshipStatus === 'pending_sent'"
+                            (click)="
+                              result.relationshipStatus === 'pending_sent'
+                                ? cancelFriendRequest(result)
+                                : sendFriendRequest(result)
+                            "
+                          >
+                            {{
+                              sendingRequestId() === result.id ? '...' : searchActionLabel(result)
+                            }}
+                          </button>
+                        } @else if (
+                          result.relationshipStatus === 'pending_received' ||
+                          result.relationshipStatus === 'friends'
+                        ) {
+                          <span class="status-badge">{{ searchActionLabel(result) }}</span>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
               }
             </div>
           }
         </div>
       }
 
-      <nav class="header-actions">
+      <nav class="nav-actions">
         @if (!isLoggedIn()) {
-          <a routerLink="/login" class="header-button primary">Login</a>
+          <a routerLink="/login" class="pill-button ghost-on-green">Login</a>
+          <a routerLink="/register" class="pill-button white-filled">Get started</a>
         } @else {
-          <div class="request-dropdown">
-            <button type="button" class="header-button secondary request-toggle" (click)="toggleRequestsDropdown()">
-              <span class="bell-icon" aria-hidden="true">&#128276;</span>
+          <div class="request-module">
+            <button type="button" class="icon-button" (click)="toggleRequestsDropdown()">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                stroke="currentColor"
+                stroke-width="2"
+                fill="none"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+
               @if (incomingRequestsCount()) {
-                <span class="request-badge">{{ incomingRequestsCount() }}</span>
+                <span class="badge-count">{{ incomingRequestsCount() }}</span>
               }
             </button>
 
             @if (requestsOpen()) {
-              <div class="request-menu">
+              <div class="dropdown-card request-dropdown">
                 @if (requestsLoading()) {
-                  <p class="request-state">Loading requests...</p>
+                  <p class="state-message">Loading requests...</p>
                 } @else if (requestsError()) {
-                  <p class="request-state error">{{ requestsError() }}</p>
+                  <p class="state-message error-text">{{ requestsError() }}</p>
                 } @else if (!incomingRequests().length) {
-                  <p class="request-state">No pending friend requests.</p>
+                  <p class="state-message">No pending friend requests.</p>
                 } @else {
-                  @for (request of incomingRequests(); track request.requestId) {
-                    <article class="request-item">
-                      <div class="search-result-avatar">
-                        @if (request.avatarUrl) {
-                          <img [src]="request.avatarUrl" [alt]="request.displayName" />
-                        } @else {
-                          <span>{{ profileInitial(request.displayName) }}</span>
-                        }
-                      </div>
+                  <div class="result-list">
+                    @for (request of incomingRequests(); track request.requestId) {
+                      <article class="user-row">
+                        <div class="user-avatar">
+                          @if (request.avatarUrl) {
+                            <img [src]="request.avatarUrl" [alt]="request.displayName" />
+                          } @else {
+                            <span>{{ profileInitial(request.displayName) }}</span>
+                          }
+                        </div>
 
-                      <div class="search-result-copy">
-                        <h3>{{ request.displayName }}</h3>
-                        <p>{{ request.mobileNumber }}</p>
-                      </div>
+                        <div class="user-info">
+                          <h3>{{ request.displayName }}</h3>
+                          <p>{{ request.mobileNumber }}</p>
+                        </div>
 
-                      <div class="request-actions">
-                        <button
-                          type="button"
-                          class="request-accept-button"
-                          [disabled]="respondingRequestId() === request.requestId"
-                          (click)="respondToRequest(request, 'accept')"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          type="button"
-                          class="request-cancel-button"
-                          [disabled]="respondingRequestId() === request.requestId"
-                          (click)="respondToRequest(request, 'reject')"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </article>
-                  }
+                        <div class="user-action column-actions">
+                          <button
+                            type="button"
+                            class="pill-button primary-filled small"
+                            [disabled]="respondingRequestId() === request.requestId"
+                            (click)="respondToRequest(request, 'accept')"
+                          >
+                            Accept
+                          </button>
+
+                          <button
+                            type="button"
+                            class="pill-button dark-outlined small"
+                            [disabled]="respondingRequestId() === request.requestId"
+                            (click)="respondToRequest(request, 'reject')"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  </div>
                 }
               </div>
             }
@@ -143,47 +185,289 @@
 
           <a
             [routerLink]="primaryLinkRoute()"
-            class="header-button secondary"
+            class="nav-text-link"
             [class.active]="isActive(primaryLinkRoute())"
           >
-            {{ primaryLinkLabel() }}
+            <span class="link-text">{{ primaryLinkLabel() }}</span>
           </a>
+
           @if (secondaryLinkLabel() && secondaryLinkRoute()) {
             <a
               [routerLink]="secondaryLinkRoute()"
-              class="header-button secondary"
+              class="nav-text-link"
               [class.active]="isActive(secondaryLinkRoute())"
             >
-              {{ secondaryLinkLabel() }}
+              <span class="link-text">{{ secondaryLinkLabel() }}</span>
             </a>
           }
+
           <a
             [routerLink]="profileRoute()"
-            class="header-button secondary"
+            class="nav-text-link"
             [class.active]="isActive(profileRoute())"
           >
-            Profile
+            <span class="link-text">Profile</span>
           </a>
-          <button type="button" class="header-button primary" (click)="logout()">Logout</button>
+
+          <button type="button" class="nav-text-link logout-link" (click)="logout()">
+            <span class="link-text">Logout</span>
+          </button>
         }
       </nav>
     </div>
   </header>
 
-  <div class="site-body">
-    <ng-content />
-  </div>
+  @if (!isLoggedIn()) {
+    <div class="landing-page-wrapper">
+      <section class="hero-crate">
+        <div class="hero-content">
+          <p class="hero-kicker">Online SMS Site</p>
 
-  <footer class="site-footer">
-    <div class="site-footer-inner">
-      <div>
-        <p class="footer-title">SMS Connect</p>
-        <p>Manage friends, messages, and premium content services in one place.</p>
+          <h2 class="display-jumbo">
+            Send smarter SMS.<br />
+            Stay closer to your people.
+          </h2>
+
+          <p class="hero-body">
+            Register your mobile number, send online messages to any phone, and manage your
+            conversations from one clean social SMS workspace. Start with
+            <strong>5 free messages</strong> and keep every SMS under a sharp
+            <strong>120-character limit</strong>.
+          </p>
+
+          <div class="hero-buttons">
+            <a routerLink="/register" class="pill-button primary-filled large-cta">
+              Create free account
+            </a>
+            <a routerLink="/login" class="pill-button ghost-on-green large-cta"> Sign in </a>
+          </div>
+
+          <div class="hero-stats">
+            <div class="stat-card">
+              <strong>5</strong>
+              <span>free messages</span>
+            </div>
+            <div class="stat-card">
+              <strong>120</strong>
+              <span>characters max</span>
+            </div>
+            <div class="stat-card">
+              <strong>∞</strong>
+              <span>friend SMS daily</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="signal-ring hero-ring-one"></div>
+          <div class="signal-ring hero-ring-two"></div>
+
+          <div class="phone-device">
+            <div class="phone-speaker">
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="phone-screen">
+              <div class="mini-toolbar">
+                <span>SMS Connect</span>
+                <strong>online</strong>
+              </div>
+
+              <div class="sms-thread">
+                <div class="sms-bubble incoming">
+                  Hey, can I send this message to any mobile number?
+                </div>
+                <div class="sms-bubble outgoing">
+                  Yes. Keep it short, simple, and under 120 characters.
+                </div>
+                <div class="sms-input-preview">
+                  <span>Type a message...</span>
+                  <button type="button">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="floating-card floating-card-one">
+            <span class="card-dot"></span>
+            OTP verified
+          </div>
+
+          <div class="floating-card floating-card-two">
+            <strong>+5</strong>
+            free SMS
+          </div>
+
+          <div class="floating-card floating-card-three">Friend request sent</div>
+        </div>
+      </section>
+
+      <section class="section-shell light-section">
+        <div class="section-heading">
+          <p class="section-kicker">Why SMS Connect</p>
+          <h3>Everything your SMS social account needs.</h3>
+          <p>
+            The platform combines registration validation, friend requests, contact management,
+            messaging, profile editing, and premium mobile content services into one experience.
+          </p>
+        </div>
+
+        <div class="props-grid">
+          <article class="content-card hover-lift">
+            <div class="feature-icon">01</div>
+            <h4 class="card-title">Register with mobile validation</h4>
+            <p class="card-body">
+              Create one account per mobile number, validate username availability, verify your
+              number, and protect duplicate registration.
+            </p>
+          </article>
+
+          <article class="content-card hover-lift">
+            <div class="feature-icon">02</div>
+            <h4 class="card-title">Send SMS to any number</h4>
+            <p class="card-body">
+              Message any mobile number with a clear 120-character limit and receive instant status
+              feedback once your message is sent.
+            </p>
+          </article>
+
+          <article class="content-card hover-lift">
+            <div class="feature-icon">03</div>
+            <h4 class="card-title">Friends unlock free daily chat</h4>
+            <p class="card-body">
+              Add registered users as friends. Once accepted, their number is added to your friend
+              list and friend messaging becomes free throughout the day.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="feature-band">
+        <div class="feature-band-inner">
+          <div class="feature-text">
+            <p class="section-kicker">Premium content</p>
+            <h3 class="band-title">Activate paid services that keep your phone updated.</h3>
+            <p class="band-body">
+              Turn on jokes, current affairs, sports, and news as paid mobile services. Select the
+              services you want, continue to checkout, and pay securely by credit card.
+            </p>
+
+            <div class="service-pills">
+              <span>Jokes</span>
+              <span>Current affairs</span>
+              <span>Sports</span>
+              <span>News</span>
+            </div>
+
+            <a routerLink="/register" class="pill-button inverted-green"> Explore services </a>
+          </div>
+
+          <div class="premium-stack" aria-hidden="true">
+            <div class="premium-card card-news">
+              <span>NEWS</span>
+              Daily headline ready
+            </div>
+            <div class="premium-card card-sports">
+              <span>SPORTS</span>
+              Match result delivered
+            </div>
+            <div class="premium-card card-jokes">
+              <span>JOKES</span>
+              Fresh joke activated
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell process-section">
+        <div class="section-heading">
+          <p class="section-kicker">How it works</p>
+          <h3>From registration to real conversations.</h3>
+        </div>
+
+        <div class="process-grid">
+          <article class="process-card">
+            <span>1</span>
+            <h4>Create account</h4>
+            <p>Register with username, email, password, and a unique 10-digit mobile number.</p>
+          </article>
+
+          <article class="process-card">
+            <span>2</span>
+            <h4>Verify OTP</h4>
+            <p>Enter the verification code to confirm your account and unlock SMS features.</p>
+          </article>
+
+          <article class="process-card">
+            <span>3</span>
+            <h4>Add contacts</h4>
+            <p>Save names and mobile numbers so sending messages becomes quick and organized.</p>
+          </article>
+
+          <article class="process-card">
+            <span>4</span>
+            <h4>Message & connect</h4>
+            <p>Send SMS, accept friend requests, and enjoy free daily messaging with friends.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <div class="final-cta-card">
+          <p class="section-kicker">Ready to connect?</p>
+          <h3>Start with 5 free SMS and build your friend network today.</h3>
+          <a routerLink="/register" class="pill-button primary-filled large-cta">
+            Join SMS Connect
+          </a>
+        </div>
+      </section>
+    </div>
+  } @else {
+    <div class="site-canvas">
+      <ng-content />
+    </div>
+  }
+
+  <footer class="feature-band-footer">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <h2 class="footer-title">SMS Connect</h2>
+        <p class="footer-desc">
+          Online SMS social website for sending messages, managing friends, saving contacts, editing
+          profiles, and activating premium mobile content services.
+        </p>
+
+        <div class="footer-socials">
+          <div class="social-circle">in</div>
+          <div class="social-circle">fb</div>
+          <div class="social-circle">tw</div>
+        </div>
       </div>
-      <div class="footer-meta">
-        <p>Project SEM3</p>
-        <p>Online SMS social website</p>
+
+      <div class="footer-links-col">
+        <h4 class="footer-heading">Features</h4>
+        <ul class="footer-list">
+          <li><a href="#">Free SMS starter pack</a></li>
+          <li><a href="#">Friend messaging</a></li>
+          <li><a href="#">Contact management</a></li>
+          <li><a href="#">Premium services</a></li>
+        </ul>
       </div>
+
+      <div class="footer-links-col">
+        <h4 class="footer-heading">Project</h4>
+        <ul class="footer-list">
+          <li><a href="#">Help center</a></li>
+          <li><a href="#">Terms of use</a></li>
+          <li><a href="#">Privacy & security</a></li>
+          <li><a href="#">SEM3 project</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Project SEM3. Online SMS social website. All rights reserved.</p>
     </div>
   </footer>
 </main>

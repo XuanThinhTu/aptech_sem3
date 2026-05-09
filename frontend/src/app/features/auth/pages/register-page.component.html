@@ -1,131 +1,185 @@
-<main class="auth-shell">
+<main class="auth-shell auth-shell--starbucks">
+  <a class="back-home" routerLink="/" aria-label="Back to Home">
+    <span class="back-icon">←</span>
+    <span class="back-text">Home</span>
+  </a>
+
+  <div class="auth-orb auth-orb--one"></div>
+  <div class="auth-orb auth-orb--two"></div>
+
   <section class="auth-panel brand-panel">
-    <p class="eyebrow">SMS Connect</p>
-    <h1>Create an account and stay close to your people.</h1>
-    <p class="lede">
-      Join the network to message friends, grow your contact list, and keep every
-      conversation within reach.
-    </p>
-    <div class="feature-list">
-      <span>Find friends faster</span>
-      <span>Message with ease</span>
-      <span>Secure sign-up</span>
+    <div class="brand-card-creative">
+      <div class="brand-copy">
+        <p class="eyebrow">SMS Connect</p>
+
+        <h1>Create your space for every conversation.</h1>
+
+        <p class="lede">
+          Join the network to message friends, grow your contact list, and keep every important
+          conversation within reach.
+        </p>
+
+        <div class="feature-list">
+          <span>Find friends faster</span>
+          <span>Message with ease</span>
+          <span>Secure sign-up</span>
+        </div>
+      </div>
+
+      <div class="phone-scene" aria-hidden="true">
+        <div class="signal-ring ring-one"></div>
+        <div class="signal-ring ring-two"></div>
+
+        <div class="phone-mockup">
+          <div class="phone-top">
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="chat-thread">
+            <div class="chat-bubble incoming">Welcome to SMS Connect.</div>
+
+            <div class="chat-bubble outgoing">Let’s set up your account.</div>
+
+            <div class="chat-bubble incoming small">OTP ready ✨</div>
+          </div>
+        </div>
+
+        <div class="floating-badge badge-one">Create</div>
+        <div class="floating-badge badge-two">Verified</div>
+      </div>
     </div>
   </section>
 
   <section class="auth-panel form-panel">
-    <div class="step-badge">
-      {{ currentStep() === 'register' ? 'Step 1/2' : 'Step 2/2' }}
+    <div class="form-card register-card">
+      <div class="form-header">
+        <div class="step-badge">
+          {{ currentStep() === 'register' ? 'Step 1/2' : 'Step 2/2' }}
+        </div>
+
+        <p class="eyebrow">New account</p>
+
+        <h2>
+          {{ currentStep() === 'register' ? 'Create your account' : 'Enter your OTP code' }}
+        </h2>
+
+        <p class="form-subtitle">
+          {{
+            currentStep() === 'register'
+              ? 'Set up your details and verify your account with an OTP code.'
+              : 'Check your email and enter the OTP code to finish your sign up.'
+          }}
+        </p>
+      </div>
+
+      @if (statusMessage()) {
+        <p class="notice success">{{ statusMessage() }}</p>
+      }
+
+      @if (errorMessage()) {
+        <p class="notice error">{{ errorMessage() }}</p>
+      }
+
+      @if (currentStep() === 'register') {
+        <form
+          [formGroup]="registerForm"
+          (ngSubmit)="requestOtp()"
+          class="auth-form register-form-grid"
+          autocomplete="off"
+        >
+          <label class="input-card full-field">
+            <span>Username</span>
+            <input
+              type="text"
+              formControlName="username"
+              placeholder="Choose a username"
+              (blur)="checkUsername()"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+          </label>
+
+          @if (usernameMessage()) {
+            <p class="helper-text full-field">{{ usernameMessage() }}</p>
+          }
+
+          <label class="input-card">
+            <span>Password</span>
+            <input
+              type="password"
+              formControlName="password"
+              placeholder="At least 8 characters"
+              autocomplete="new-password"
+            />
+          </label>
+
+          <label class="input-card">
+            <span>Confirm password</span>
+            <input
+              type="password"
+              formControlName="confirmPassword"
+              placeholder="Re-enter password"
+              autocomplete="new-password"
+            />
+          </label>
+
+          <label class="input-card">
+            <span>Email ID</span>
+            <input
+              type="email"
+              formControlName="email"
+              placeholder="yourname@example.com"
+              autocomplete="email"
+            />
+          </label>
+
+          <label class="input-card">
+            <span>Mobile number</span>
+            <input
+              type="text"
+              formControlName="mobileNumber"
+              placeholder="0987654321"
+              (blur)="checkMobileNumber()"
+              autocomplete="tel"
+            />
+          </label>
+
+          @if (mobileMessage()) {
+            <p class="helper-text full-field">{{ mobileMessage() }}</p>
+          }
+
+          <button class="primary-pill full-field" type="submit" [disabled]="isSubmitting()">
+            <span>{{ isSubmitting() ? 'Sending code...' : 'Send verification code' }}</span>
+          </button>
+        </form>
+      } @else {
+        <form [formGroup]="otpForm" (ngSubmit)="verifyOtp()" class="auth-form">
+          <label class="input-card">
+            <span>Email ID</span>
+            <input type="email" [value]="registerForm.controls.email.value" readonly />
+          </label>
+
+          <label class="input-card">
+            <span>OTP code</span>
+            <input type="text" formControlName="otpCode" placeholder="Enter the 6-digit OTP" />
+          </label>
+
+          <button class="primary-pill" type="submit" [disabled]="isSubmitting()">
+            <span>{{ isSubmitting() ? 'Verifying...' : 'Finish sign up' }}</span>
+          </button>
+        </form>
+
+        <button type="button" class="ghost-button" (click)="goBack()">
+          Back to registration form
+        </button>
+      }
+
+      <p class="auth-link">
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </p>
     </div>
-
-    <h2>{{ currentStep() === 'register' ? 'Create your account' : 'Enter your OTP code' }}</h2>
-
-    @if (statusMessage()) {
-      <p class="notice success">{{ statusMessage() }}</p>
-    }
-
-    @if (errorMessage()) {
-      <p class="notice error">{{ errorMessage() }}</p>
-    }
-
-    @if (currentStep() === 'register') {
-      <form
-        [formGroup]="registerForm"
-        (ngSubmit)="requestOtp()"
-        class="auth-form"
-        autocomplete="off"
-      >
-        <label>
-          <span>Username</span>
-          <input
-            type="text"
-            formControlName="username"
-            placeholder="Choose a username"
-            (blur)="checkUsername()"
-            autocomplete="off"
-            autocapitalize="none"
-            spellcheck="false"
-          />
-        </label>
-
-        @if (usernameMessage()) {
-          <p class="helper-text">{{ usernameMessage() }}</p>
-        }
-
-        <label>
-          <span>Password</span>
-          <input
-            type="password"
-            formControlName="password"
-            placeholder="At least 8 characters"
-            autocomplete="new-password"
-          />
-        </label>
-
-        <label>
-          <span>Confirm password</span>
-          <input
-            type="password"
-            formControlName="confirmPassword"
-            placeholder="Re-enter your password"
-            autocomplete="new-password"
-          />
-        </label>
-
-        <label>
-          <span>Email ID</span>
-          <input
-            type="email"
-            formControlName="email"
-            placeholder="yourname@example.com"
-            autocomplete="email"
-          />
-        </label>
-
-        <label>
-          <span>10-digit mobile number</span>
-          <input
-            type="text"
-            formControlName="mobileNumber"
-            placeholder="0987654321"
-            (blur)="checkMobileNumber()"
-            autocomplete="tel"
-          />
-        </label>
-
-        @if (mobileMessage()) {
-          <p class="helper-text">{{ mobileMessage() }}</p>
-        }
-
-        <button type="submit" [disabled]="isSubmitting()">
-          {{ isSubmitting() ? 'Sending code...' : 'Send verification code' }}
-        </button>
-      </form>
-    } @else {
-      <form [formGroup]="otpForm" (ngSubmit)="verifyOtp()" class="auth-form">
-        <label>
-          <span>Email ID</span>
-          <input type="email" [value]="registerForm.controls.email.value" readonly />
-        </label>
-
-        <label>
-          <span>OTP code</span>
-          <input type="text" formControlName="otpCode" placeholder="Enter the 6-digit OTP" />
-        </label>
-
-        <button type="submit" [disabled]="isSubmitting()">
-          {{ isSubmitting() ? 'Verifying...' : 'Finish sign up' }}
-        </button>
-      </form>
-
-      <button type="button" class="ghost-button" (click)="goBack()">
-        Back to registration form
-      </button>
-    }
-
-    <p class="auth-link">
-      Already have an account?
-      <a routerLink="/login">Sign in</a>
-    </p>
   </section>
 </main>

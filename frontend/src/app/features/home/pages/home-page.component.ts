@@ -9,12 +9,24 @@ import { AuthStateService } from '../../../core/services/auth-state.service';
 import { ChatPopupComponent } from '../../chat/components/chat-popup.component';
 import { ChatApiService, ChatMessage } from '../../chat/services/chat-api.service';
 import { FriendsApiService } from '../../friends/services/friends-api.service';
-import { FriendsRealtimeMessage, FriendsRealtimeService } from '../../friends/services/friends-realtime.service';
+import {
+  FriendsRealtimeMessage,
+  FriendsRealtimeService,
+} from '../../friends/services/friends-realtime.service';
 import { FriendshipStateService } from '../../friends/services/friendship-state.service';
-import { HomeApiService, HomeFriend, HomeServiceCard, SubscriptionCheckoutPayload, HomeGroup ,HomeOrder} from '../services/home-api.service';
+import {
+  HomeApiService,
+  HomeFriend,
+  HomeServiceCard,
+  SubscriptionCheckoutPayload,
+  HomeGroup,
+  HomeOrder,
+} from '../services/home-api.service';
 import { SiteLayoutComponent } from '../../../layout/site-layout.component';
-import { FriendProfileResponse, ProfileApiService } from '../../profile/services/profile-api.service';
-
+import {
+  FriendProfileResponse,
+  ProfileApiService,
+} from '../../profile/services/profile-api.service';
 
 @Component({
   selector: 'app-home-page',
@@ -52,12 +64,12 @@ export class HomePageComponent implements OnInit {
   protected readonly friendProfileLoading = signal(false);
   protected readonly friendProfileError = signal('');
   protected readonly activeChatFriend = signal<HomeFriend | null>(null);
-  protected readonly myOrders = signal<any[]>([]); 
+  protected readonly myOrders = signal<any[]>([]);
   protected readonly ordersLoading = signal(false);
   protected readonly ordersError = signal('');
   // Nhóm
-  protected readonly groups = signal<HomeGroup[]>([]); 
-  protected readonly activeGroup = signal<HomeGroup | null>(null); 
+  protected readonly groups = signal<HomeGroup[]>([]);
+  protected readonly activeGroup = signal<HomeGroup | null>(null);
   protected readonly groupMessages = signal<ChatMessage[]>([]);
 
   protected readonly chatMessages = signal<ChatMessage[]>([]);
@@ -69,7 +81,7 @@ export class HomePageComponent implements OnInit {
   protected readonly checkoutErrorMessage = signal('');
   protected readonly showSubscriptionDialog = signal(false);
   protected readonly isCreatingCheckout = signal(false);
-  protected readonly selectedProvider = signal<'VNPAY' | 'PAYPAL'>('PAYPAL');   
+  protected readonly selectedProvider = signal<'VNPAY' | 'PAYPAL'>('PAYPAL');
 
   protected readonly servicesCountLabel = computed(
     () => `${this.services().length} services available`,
@@ -103,10 +115,7 @@ export class HomePageComponent implements OnInit {
   protected readonly paginatedFriends = computed(() => {
     const currentPage = Math.min(this.currentFriendsPage(), this.totalFriendsPages());
     const startIndex = (currentPage - 1) * HomePageComponent.friendsPerPage;
-    return this.filteredFriends().slice(
-      startIndex,
-      startIndex + HomePageComponent.friendsPerPage,
-    );
+    return this.filteredFriends().slice(startIndex, startIndex + HomePageComponent.friendsPerPage);
   });
   protected readonly friendPageNumbers = computed(() =>
     Array.from({ length: this.totalFriendsPages() }, (_, index) => index + 1),
@@ -120,6 +129,7 @@ export class HomePageComponent implements OnInit {
   protected readonly selectedServicesTotal = computed(() =>
     this.selectedServices().reduce((sum, service) => sum + service.monthlyPrice, 0),
   );
+  protected readonly activeHomeView = signal<'messages' | 'services' | 'history'>('messages');
 
   constructor() {
     effect(() => {
@@ -245,9 +255,7 @@ export class HomePageComponent implements OnInit {
         this.loadFriends(user.id, false);
       },
       error: (error: HttpErrorResponse) => {
-        this.chatError.set(
-          error.error?.message ?? 'Unable to send this message right now.',
-        );
+        this.chatError.set(error.error?.message ?? 'Unable to send this message right now.');
         this.chatSending.set(false);
       },
     });
@@ -259,10 +267,9 @@ export class HomePageComponent implements OnInit {
 
     this.chatApiService.getUserGroups(user.id).subscribe({
       next: (groups) => this.groups.set(groups),
-      error: (err) => console.error('Lỗi khi tải nhóm:', err)
+      error: (err) => console.error('Lỗi khi tải nhóm:', err),
     });
   }
-
 
   protected openGroupChat(group: HomeGroup) {
     const user = this.currentUser(); // Lấy user từ signal
@@ -275,8 +282,8 @@ export class HomePageComponent implements OnInit {
 
     if (currentActiveId === groupId && groupId !== undefined) return;
 
-    this.activeChatFriend.set(null); 
-    this.activeGroup.set(group);     
+    this.activeChatFriend.set(null);
+    this.activeGroup.set(group);
     this.groupMessages.set([]);
     this.chatError.set('');
     this.chatLoading.set(true);
@@ -291,7 +298,7 @@ export class HomePageComponent implements OnInit {
         console.error('Lỗi tải tin nhắn:', err);
         this.chatError.set(err.error?.message ?? 'Không thể tải tin nhắn nhóm.');
         this.chatLoading.set(false);
-      }
+      },
     });
   }
   private loadOrderHistory() {
@@ -309,19 +316,18 @@ export class HomePageComponent implements OnInit {
       error: (err) => {
         console.error('3. Lỗi API:', err);
         this.ordersLoading.set(false);
-      }
+      },
     });
   }
-protected selectedOrder = signal<HomeOrder | null>(null);
+  protected selectedOrder = signal<HomeOrder | null>(null);
 
   viewOrderDetails(order: HomeOrder) {
     this.selectedOrder.set(order);
-
   }
 
-closeDetails() {
-  this.selectedOrder.set(null);
-}
+  closeDetails() {
+    this.selectedOrder.set(null);
+  }
   protected closeGroupChat() {
     this.activeGroup.set(null);
     this.groupMessages.set([]);
@@ -339,22 +345,22 @@ closeDetails() {
     // FIX: Đảm bảo truyền đúng thứ tự tham số khớp với service
     this.chatApi.sendGroupMessage(user.id, groupId, content).subscribe({
       next: (response) => {
-        this.groupMessages.update(msgs => [...msgs, response.chatMessage]);
+        this.groupMessages.update((msgs) => [...msgs, response.chatMessage]);
         this.chatSending.set(false);
       },
       error: (err: HttpErrorResponse) => {
         this.chatError.set(err.error?.message ?? 'Lỗi gửi tin nhắn vào nhóm.');
         this.chatSending.set(false);
-      }
+      },
     });
   }
- 
+
   getMemberName(userId: string): string {
-  if (userId === this.currentUser()?.id) return 'Bạn';
-  
-  const friend = this.friends().find(f => f.id === userId);
-  return friend ? friend.displayName : `Người dùng (${userId.substring(0, 4)})`;
-}
+    if (userId === this.currentUser()?.id) return 'Bạn';
+
+    const friend = this.friends().find((f) => f.id === userId);
+    return friend ? friend.displayName : `Người dùng (${userId.substring(0, 4)})`;
+  }
 
   protected goToFriendsPage(page: number) {
     if (page < 1 || page > this.totalFriendsPages() || page === this.currentFriendsPage()) return;
@@ -389,9 +395,7 @@ closeDetails() {
         this.friendPendingRemoval.set(null);
       },
       error: (error: HttpErrorResponse) => {
-        this.friendsError.set(
-          error.error?.message ?? 'Unable to remove this friend right now.',
-        );
+        this.friendsError.set(error.error?.message ?? 'Unable to remove this friend right now.');
         this.removingFriendId.set('');
       },
     });
@@ -418,7 +422,7 @@ closeDetails() {
   protected confirmSubscriptionCheckout() {
     const user = this.currentUser();
     const serviceIds = this.selectedServiceIds();
-    const provider = this.selectedProvider(); 
+    const provider = this.selectedProvider();
 
     if (!user || !serviceIds.length) return;
 
@@ -429,7 +433,7 @@ closeDetails() {
       .createSubscriptionCheckout({
         userId: user.id,
         serviceIds,
-        provider, 
+        provider,
       })
       .subscribe({
         next: (response) => {
@@ -440,11 +444,59 @@ closeDetails() {
         error: (error: HttpErrorResponse) => {
           const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
           this.checkoutErrorMessage.set(
-            error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`
+            error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`,
           );
           this.isCreatingCheckout.set(false);
         },
       });
+  }
+  protected readonly historyPage = signal(1);
+  protected readonly historyPageSize = 4;
+  protected readonly historyStatusFilter = signal<'ALL' | 'APPROVED' | 'PENDING'>('ALL');
+
+  protected readonly filteredOrders = computed(() => {
+    const filter = this.historyStatusFilter();
+
+    if (filter === 'ALL') {
+      return this.myOrders();
+    }
+
+    if (filter === 'APPROVED') {
+      return this.myOrders().filter((order) => order.status === 'APPROVED');
+    }
+
+    return this.myOrders().filter((order) => order.status !== 'APPROVED');
+  });
+
+  protected readonly totalHistoryPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredOrders().length / this.historyPageSize)),
+  );
+
+  protected readonly paginatedOrders = computed(() => {
+    const start = (this.historyPage() - 1) * this.historyPageSize;
+    return this.filteredOrders().slice(start, start + this.historyPageSize);
+  });
+
+  protected readonly historyPageNumbers = computed(() =>
+    Array.from({ length: this.totalHistoryPages() }, (_, index) => index + 1),
+  );
+
+  protected readonly approvedOrdersCount = computed(
+    () => this.myOrders().filter((order) => order.status === 'APPROVED').length,
+  );
+
+  protected readonly pendingOrdersCount = computed(
+    () => this.myOrders().filter((order) => order.status !== 'APPROVED').length,
+  );
+
+  protected setHistoryFilter(filter: 'ALL' | 'APPROVED' | 'PENDING') {
+    this.historyStatusFilter.set(filter);
+    this.historyPage.set(1);
+  }
+
+  protected goToHistoryPage(page: number) {
+    const safePage = Math.min(Math.max(page, 1), this.totalHistoryPages());
+    this.historyPage.set(safePage);
   }
 
   private loadServices() {
@@ -455,9 +507,7 @@ closeDetails() {
         this.servicesLoading.set(false);
       },
       error: (error: HttpErrorResponse) => {
-        this.servicesError.set(
-          error.error?.message ?? 'Unable to load services right now.',
-        );
+        this.servicesError.set(error.error?.message ?? 'Unable to load services right now.');
         this.servicesLoading.set(false);
       },
     });
@@ -475,9 +525,7 @@ closeDetails() {
         this.markConversationRead(friendUserId);
       },
       error: (error: HttpErrorResponse) => {
-        this.chatError.set(
-          error.error?.message ?? 'Unable to load this conversation right now.',
-        );
+        this.chatError.set(error.error?.message ?? 'Unable to load this conversation right now.');
         this.chatLoading.set(false);
       },
     });
@@ -492,9 +540,7 @@ closeDetails() {
         if (showLoading) this.friendsLoading.set(false);
       },
       error: (error: HttpErrorResponse) => {
-        this.friendsError.set(
-          error.error?.message ?? 'Unable to load friends right now.',
-        );
+        this.friendsError.set(error.error?.message ?? 'Unable to load friends right now.');
         if (showLoading) this.friendsLoading.set(false);
       },
     });
@@ -521,71 +567,67 @@ closeDetails() {
   protected toggleMemberSelection(friendId: string) {
     const current = this.selectedMemberIds();
     if (current.includes(friendId)) {
-      this.selectedMemberIds.set(current.filter(id => id !== friendId));
+      this.selectedMemberIds.set(current.filter((id) => id !== friendId));
     } else {
       this.selectedMemberIds.set([...current, friendId]);
     }
   }
 
+  handleKickMember(event: { conversationId: string; targetUserId: string }) {
+    const currentUser = this.currentUser();
+    if (!currentUser) return;
 
-handleKickMember(event: { conversationId: string; targetUserId: string }) {
-  const currentUser = this.currentUser();
-  if (!currentUser) return;
-
-  if (confirm('Bạn có chắc chắn muốn mời thành viên này ra khỏi nhóm?')) {
-    // Gọi đến chatApiService (không phải homeApi)
-    this.chatApiService.kickGroupMember(
-      event.conversationId, 
-      event.targetUserId, 
-      currentUser.id
-    ).subscribe({
-      next: () => {
-        this.loadGroups(); // Tải lại danh sách nhóm để cập nhật số lượng tv
-        alert('Đã mời thành viên ra khỏi nhóm.');
-      },
-      error: (err) => {
-        console.error(err);
-        alert(err.error?.message || 'Lỗi khi mời thành viên ra khỏi nhóm.');
-      }
-    });
+    if (confirm('Bạn có chắc chắn muốn mời thành viên này ra khỏi nhóm?')) {
+      // Gọi đến chatApiService (không phải homeApi)
+      this.chatApiService
+        .kickGroupMember(event.conversationId, event.targetUserId, currentUser.id)
+        .subscribe({
+          next: () => {
+            this.loadGroups(); // Tải lại danh sách nhóm để cập nhật số lượng tv
+            alert('Đã mời thành viên ra khỏi nhóm.');
+          },
+          error: (err) => {
+            console.error(err);
+            alert(err.error?.message || 'Lỗi khi mời thành viên ra khỏi nhóm.');
+          },
+        });
+    }
   }
-}
 
-groupPendingMembers = signal<any | null>(null);
+  groupPendingMembers = signal<any | null>(null);
 
-openViewMembersDialog(group: any) {
-  this.groupPendingMembers.set(group);
-}
-
-
-closeViewMembersDialog() {
-  this.groupPendingMembers.set(null);
-}
-
-onKickFromList(groupId: string, userId: string) {
-  this.handleKickMember({ conversationId: groupId, targetUserId: userId });
-}
-handleDisbandGroup(groupId: string) {
-  const currentUser = this.currentUser();
-  if (!currentUser) return;
-
-  if (confirm('CẢNH BÁO: Bạn có chắc chắn muốn giải tán nhóm này? Mọi tin nhắn sẽ bị xóa.')) {
-    this.chatApi.disbandGroup(groupId, currentUser.id).subscribe({
-      next: () => {
-        this.closeGroupChat();
-        this.loadGroups();     
-        alert('Nhóm đã được giải tán thành công.');
-      },
-      error: (err: HttpErrorResponse) => {
-        alert(err.error?.message || 'Lỗi khi giải tán nhóm.');
-      }
-    });
+  openViewMembersDialog(group: any) {
+    this.groupPendingMembers.set(group);
   }
-}
+
+  closeViewMembersDialog() {
+    this.groupPendingMembers.set(null);
+  }
+
+  onKickFromList(groupId: string, userId: string) {
+    this.handleKickMember({ conversationId: groupId, targetUserId: userId });
+  }
+  handleDisbandGroup(groupId: string) {
+    const currentUser = this.currentUser();
+    if (!currentUser) return;
+
+    if (confirm('CẢNH BÁO: Bạn có chắc chắn muốn giải tán nhóm này? Mọi tin nhắn sẽ bị xóa.')) {
+      this.chatApi.disbandGroup(groupId, currentUser.id).subscribe({
+        next: () => {
+          this.closeGroupChat();
+          this.loadGroups();
+          alert('Nhóm đã được giải tán thành công.');
+        },
+        error: (err: HttpErrorResponse) => {
+          alert(err.error?.message || 'Lỗi khi giải tán nhóm.');
+        },
+      });
+    }
+  }
   protected confirmCreateGroup() {
     const user = this.currentUser();
     const title = this.newGroupTitle().trim();
-    
+
     if (!user || !title) {
       console.warn('Thiếu thông tin user hoặc tên nhóm');
       return;
@@ -598,7 +640,7 @@ handleDisbandGroup(groupId: string) {
         console.log('Tạo nhóm thành công:', response);
         this.isCreatingGroup.set(false);
         this.showCreateGroupModal.set(false);
-        this.loadGroups(); 
+        this.loadGroups();
         this.newGroupTitle.set('');
         this.selectedMemberIds.set([]);
       },
@@ -606,7 +648,7 @@ handleDisbandGroup(groupId: string) {
         this.isCreatingGroup.set(false);
         console.error('Lỗi khi tạo nhóm:', err);
         alert('Không thể tạo nhóm. Vui lòng kiểm tra lại kết nối!');
-      }
+      },
     });
   }
 
@@ -635,7 +677,11 @@ handleDisbandGroup(groupId: string) {
         this.chatMessages.update((messages) =>
           messages.map((message) =>
             message.isOwnMessage
-              ? { ...message, isRead: true, readAt: String(payload.readAt ?? new Date().toISOString()) }
+              ? {
+                  ...message,
+                  isRead: true,
+                  readAt: String(payload.readAt ?? new Date().toISOString()),
+                }
               : message,
           ),
         );
@@ -659,7 +705,7 @@ handleDisbandGroup(groupId: string) {
         );
         if (reloadFriends) this.loadFriends(user.id, false);
       },
-      error: () => {}
+      error: () => {},
     });
   }
 
@@ -676,7 +722,6 @@ handleDisbandGroup(groupId: string) {
       );
     });
   }
-  
 
   private normalizeChatMessage(payload: Partial<ChatMessage>, currentUserId: string): ChatMessage {
     const senderUserId = String(payload.senderUserId ?? '');
@@ -694,8 +739,12 @@ handleDisbandGroup(groupId: string) {
       readAt: !payload.readAt ? null : String(payload.readAt),
       senderDisplayName: payload.senderDisplayName ? String(payload.senderDisplayName) : undefined,
       senderAvatarUrl: payload.senderAvatarUrl ? String(payload.senderAvatarUrl) : undefined,
-      recipientDisplayName: payload.recipientDisplayName ? String(payload.recipientDisplayName) : undefined,
-      recipientAvatarUrl: payload.recipientAvatarUrl ? String(payload.recipientAvatarUrl) : undefined,
+      recipientDisplayName: payload.recipientDisplayName
+        ? String(payload.recipientDisplayName)
+        : undefined,
+      recipientAvatarUrl: payload.recipientAvatarUrl
+        ? String(payload.recipientAvatarUrl)
+        : undefined,
     };
   }
 }
