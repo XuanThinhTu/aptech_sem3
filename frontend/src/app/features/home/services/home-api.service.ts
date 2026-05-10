@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs/internal/Observable';
 
 export interface HomeServiceCard {
   id: string;
@@ -80,6 +81,7 @@ export class HomeApiService {
     );
   }
 
+
   /**
    * (Tùy chọn) Tạo nhóm mới
    */
@@ -96,5 +98,11 @@ export class HomeApiService {
   }
   getOrderDetails(orderId: string) {
   return this.http.get<HomeOrder>(`${this.apiUrl}/subscriptions/order/${orderId}`);
+}
+ checkServiceOwnership(userId: string, serviceKeys: string[]): Observable<{ owned: boolean }> {
+  return this.http.post<{ owned: boolean }>(`${this.apiUrl}/subscriptions/check-ownership`, {
+      userId,
+      serviceKeys
+  });
 }
 }

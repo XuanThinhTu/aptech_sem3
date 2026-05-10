@@ -218,7 +218,43 @@
               @if (successMessage()) {
                 <p class="feedback success">{{ successMessage() }}</p>
               }
+              <div class="form-card-section">
+                <div class="section-heading">
+                  <span class="section-number">03</span>
+                  <div>
+                    <h2>Security</h2>
+                    <p>Change your password to keep your account secure.</p>
+                  </div>
+                </div>
 
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Current password</span>
+                    <input type="password" [(ngModel)]="oldPassword" [ngModelOptions]="{standalone: true}" placeholder="••••••••" />
+                  </label>
+
+                  <div class="field-group-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; grid-column: span 2;">
+                    <label class="field">
+                      <span>New password</span>
+                      <input type="password" [(ngModel)]="newPassword" [ngModelOptions]="{standalone: true}" placeholder="Min 6 characters" />
+                    </label>
+
+                    <label class="field">
+                      <span>Confirm new password</span>
+                      <input type="password" [(ngModel)]="confirmPassword" [ngModelOptions]="{standalone: true}" placeholder="Confirm new password" />
+                    </label>
+                  </div>
+
+                  <div style="grid-column: span 2; margin-top: 10px;">
+                    <button type="button" 
+                            class="profile-button secondary" 
+                            (click)="handleChangePassword()"
+                            [disabled]="!oldPassword || !newPassword || isChangingPassword()">
+                      {{ isChangingPassword() ? 'Updating...' : 'Update Password Only' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
               <div class="form-actions">
                 <button type="submit" class="profile-button primary" [disabled]="isSubmitting()">
                   {{ isSubmitting() ? 'Saving profile...' : 'Save profile' }}

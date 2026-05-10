@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as paypal from '@paypal/checkout-server-sdk';
 import { ServiceSubscription, ServiceSubscriptionDocument } from '../database/schemas/service-subscription.schema';
 import { ContentService, ContentServiceDocument } from '../database/schemas/content-service.schema';
-import { SubscriptionStatus } from '../database/enums/database.enums';
+import { OrderStatus, PaymentStatus, SubscriptionStatus } from '../database/enums/database.enums';
 import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
@@ -26,8 +26,26 @@ export class PaypalService {
     );
     this.client = new paypal.core.PayPalHttpClient(environment);
   }
-
 async createOrder(amountVND: number, txnRef: string, userId: string, serviceTypes: any) {
+    
+    const existingSubscription = await this.paymentModel.findOne({
+      userId: new Types.ObjectId(userId),
+      serviceTypes: { $all: Array.isArray(serviceTypes) ? serviceTypes : [serviceTypes] },
+      status: PaymentStatus.SUCCESS, 
+      orderStatus: OrderStatus.COMPLETED
+    });
+
+    if (existingSubscription) {
+      console.log('--- ĐÃ TÌM THẤY ĐƠN TRÙNG, ĐANG CHẶN ---');
+      
+      await this.chatService.sendMessage(
+        '69e219439a52b345c0c82898', 
+        userId, 
+        `Hệ thống: Gói dịch vụ này bạn đã sở hữu. Vui lòng không thanh toán trùng!`
+      );
+      throw new BadRequestException('ALREADY_OWNED');
+    }
+
     const amountUSD = (amountVND / parseFloat(process.env.VNPAY_EXCHANGE_RATE!)).toFixed(2);
     const request = new paypal.orders.OrdersCreateRequest();
     
@@ -68,7 +86,7 @@ async createOrder(amountVND: number, txnRef: string, userId: string, serviceType
     });
 
     return result;
-  }
+}
 async captureOrder(orderId: string, userId: string, serviceType: any, amountVND: number) {
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     

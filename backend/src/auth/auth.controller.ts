@@ -32,4 +32,11 @@ export class AuthController {
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
+  @Post('change-password')
+  async changePassword(@Body() data: { userId: string; oldPassword: string; newPassword: string }) {
+    return await this.authService.changePassword(data.userId, {
+      oldPassword: data.oldPassword,
+      newPassword: data.newPassword,
+    });
+  }
 }

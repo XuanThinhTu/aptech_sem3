@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   FormBuilder,
+  FormsModule, // <--- THÊM FormsModule VÀO ĐÂY
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -13,11 +14,13 @@ import {
   ProfileApiService,
   ProfileDetails,
 } from '../services/profile-api.service';
+import { AuthApiService } from '../../auth/services/auth-api.service'; // <--- ĐẢM BẢO IMPORT AuthApi
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SiteLayoutComponent],
+  // THÊM FormsModule VÀO imports
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, SiteLayoutComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.css',
 })
@@ -25,6 +28,7 @@ export class ProfilePageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authState = inject(AuthStateService);
   private readonly profileApi = inject(ProfileApiService);
+  // private readonly authApi = inject(AuthApiService); 
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -38,7 +42,46 @@ export class ProfilePageComponent implements OnInit {
   protected readonly avatarPreviewUrl = signal('');
   protected readonly selectedAvatarName = signal('');
   protected readonly selectedAvatarFile = signal<File | null>(null);
+  protected readonly isChangingPassword = signal(false);
+  protected oldPassword = '';
+  protected newPassword = '';
+  protected confirmPassword = '';
 
+  protected handleChangePassword() {
+    if (this.newPassword !== this.confirmPassword) {
+      this.errorMessage.set('New passwords do not match.');
+      return;
+    }
+
+    if (this.newPassword.length < 6) {
+      this.errorMessage.set('New password must be at least 6 characters.');
+      return;
+    }
+
+    const user = this.currentUser();
+    if (!user) return;
+
+    this.isChangingPassword.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.profileApi.changePassword(user.id, {
+        oldPassword: this.oldPassword,
+        newPassword: this.newPassword
+    }).subscribe({
+      next: (res) => {
+        this.isChangingPassword.set(false);
+        this.successMessage.set('Password updated successfully!');
+        this.oldPassword = '';
+        this.newPassword = '';
+        this.confirmPassword = '';
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isChangingPassword.set(false);
+        this.errorMessage.set(error.error?.message ?? 'Failed to update password.');
+      }
+    });
+  }
   protected readonly genderOptions = [
     { value: 'male', label: 'Male' },
     { value: 'female', label: 'Female' },

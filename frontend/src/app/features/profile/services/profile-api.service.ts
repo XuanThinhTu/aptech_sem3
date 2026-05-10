@@ -71,6 +71,7 @@ export interface UpdateProfilePayload {
 export class ProfileApiService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://127.0.0.1:3000/api/profile';
+  private readonly authUrl = 'http://127.0.0.1:3000/api/auth';
 
   getProfile(userId: string) {
     return this.http.get<ProfileResponse>(`${this.apiUrl}/${userId}`);
@@ -79,6 +80,13 @@ export class ProfileApiService {
   getFriendProfile(viewerUserId: string, friendUserId: string) {
     return this.http.get<FriendProfileResponse>(`${this.apiUrl}/friend/view`, {
       params: { viewerUserId, friendUserId },
+    });
+  }
+  changePassword(userId: string, data: any) {
+    return this.http.post<{ message: string }>(`${this.authUrl}/change-password`, {
+      userId,
+      oldPassword: data.oldPassword,
+      newPassword: data.newPassword,
     });
   }
 

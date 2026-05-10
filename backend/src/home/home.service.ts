@@ -54,6 +54,7 @@ export class HomeService {
     private readonly userModel: Model<User>,
     @InjectModel(Profile.name)
     private readonly profileModel: Model<Profile>,
+   
   ) {
     this.backendBaseUrl =
       this.configService.get<string>('BACKEND_BASE_URL') ?? 'http://127.0.0.1:3000';
@@ -513,5 +514,28 @@ async handlePaypalReturn(orderId: string): Promise<string> {
     status: payment.status,
     createdAt: payment.createdAt ? payment.createdAt.toISOString() : new Date().toISOString(),
   }));
+}
+
+async checkOwnership(userId: string, serviceKeys: string[]) {
+  try {
+    // 1. Kiểm tra đầu vào
+    if (!userId || !serviceKeys || serviceKeys.length === 0) {
+      return { owned: false };
+    }
+
+    // 2. Tìm thẳng trong bảng Payment (Dùng paymentModel bro đã inject chuẩn)
+    // serviceTypes trong DB lưu mảng các 'key' (ví dụ: ['the_thao', 'tin_tuc'])
+    const existing = await this.paymentModel.findOne({
+      userId: new Types.ObjectId(userId),
+      serviceTypes: { $all: serviceKeys }, 
+      status: PaymentStatus.SUCCESS // Dùng Enum bro đã import ở đầu file
+    }).lean();
+
+    return { owned: !!existing };
+  } catch (error) {
+    // Log lỗi ra terminal của NestJS để debug nếu cần
+    console.error('Lỗi checkOwnership:', error);
+    return { owned: false };
+  }
 }
 }

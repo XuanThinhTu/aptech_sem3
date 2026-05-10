@@ -77,7 +77,7 @@ export class HomePageComponent implements OnInit {
   protected readonly groups = signal<HomeGroup[]>([]);
   protected readonly activeGroup = signal<HomeGroup | null>(null);
   protected readonly groupMessages = signal<ChatMessage[]>([]);
-
+  private isUserAlreadyOwned = false;
   protected readonly chatMessages = signal<ChatMessage[]>([]);
   protected readonly chatLoading = signal(false);
   protected readonly chatSending = signal(false);
@@ -88,7 +88,6 @@ export class HomePageComponent implements OnInit {
   protected readonly showSubscriptionDialog = signal(false);
   protected readonly isCreatingCheckout = signal(false);
   protected readonly selectedProvider = signal<'VNPAY' | 'PAYPAL'>('PAYPAL');
-
   protected readonly servicesCountLabel = computed(
     () => `${this.services().length} services available`,
   );
@@ -326,7 +325,7 @@ export class HomePageComponent implements OnInit {
   }
   private loadOrderHistory() {
     const user = this.currentUser();
-    console.log('1. Kiểm tra User:', user); // Xem có user chưa
+    console.log('1. Kiểm tra User:', user); //check nhẹ cái lỗi sợ vcl
     if (!user) return;
 
     this.ordersLoading.set(true);
@@ -362,10 +361,9 @@ export class HomePageComponent implements OnInit {
     const group = this.activeGroup();
     if (!user || !group || !content.trim()) return;
 
-    const groupId = (group as any)._id || group.id; // Lấy ID chuẩn
+    const groupId = (group as any)._id || group.id; 
 
     this.chatSending.set(true);
-    // FIX: Đảm bảo truyền đúng thứ tự tham số khớp với service
     this.chatApi.sendGroupMessage(user.id, groupId, content).subscribe({
       next: (response) => {
         this.groupMessages.update((msgs) => [...msgs, response.chatMessage]);
@@ -423,56 +421,102 @@ export class HomePageComponent implements OnInit {
       },
     });
   }
+protected subscribeSelectedServices() {
+  const selectedServices = this.services().filter(s => this.isServiceSelected(s.id));
+  const serviceKeys = selectedServices.map(s => s.key); 
 
-  protected subscribeSelectedServices() {
-    if (!this.selectedServiceIds().length) return;
-    const user = this.currentUser();
-    if (!user) {
-      this.router.navigate(['/login']);
-      return;
+  const user = this.currentUser();
+  if (!user || serviceKeys.length === 0) return;
+
+  this.isCreatingCheckout.set(true);
+  this.homeApi.checkServiceOwnership(user.id, serviceKeys).subscribe({
+    next: (res) => {
+      this.isCreatingCheckout.set(false);
+      
+      if (res.owned) {
+        // Cắm chốt để hàm confirm bên dưới không chạy được
+        this.isUserAlreadyOwned = true; 
+        
+        this.activeHomeView.set('messages');
+        const adminId = '69e219439a52b345c0c82898';
+        const admin = this.friends().find(f => f.id === adminId);
+        if (admin) {
+          this.openChat(admin);
+        }
+        alert('Bạn đã sở hữu các gói dịch vụ này rồi!'); 
+        return; 
+      } else {
+        // Mở khóa nếu chưa sở hữu
+        this.isUserAlreadyOwned = false; 
+        this.showSubscriptionDialog.set(true);
+      }
+    },
+    error: (err) => {
+      console.error('Lỗi kiểm tra sở hữu:', err);
+      this.isCreatingCheckout.set(false);
+      this.isUserAlreadyOwned = false; 
+      this.showSubscriptionDialog.set(true); 
     }
-    this.checkoutErrorMessage.set('');
-    this.serviceActionMessage.set('');
-    this.showSubscriptionDialog.set(true);
-  }
-
+  });
+}
   protected closeSubscriptionDialog() {
     if (this.isCreatingCheckout()) return;
     this.showSubscriptionDialog.set(false);
     this.checkoutErrorMessage.set('');
   }
 
-  protected confirmSubscriptionCheckout() {
-    const user = this.currentUser();
-    const serviceIds = this.selectedServiceIds();
-    const provider = this.selectedProvider();
-
-    if (!user || !serviceIds.length) return;
-
-    this.isCreatingCheckout.set(true);
-    this.checkoutErrorMessage.set('');
-
-    this.homeApi
-      .createSubscriptionCheckout({
-        userId: user.id,
-        serviceIds,
-        provider,
-      })
-      .subscribe({
-        next: (response) => {
-          if (response.paymentUrl) {
-            window.location.href = response.paymentUrl;
-          }
-        },
-        error: (error: HttpErrorResponse) => {
-          const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
-          this.checkoutErrorMessage.set(
-            error.error?.message ?? `Unable to prepare your ${msg} checkout right now.`,
-          );
-          this.isCreatingCheckout.set(false);
-        },
-      });
+protected confirmSubscriptionCheckout() {
+  if (this.isUserAlreadyOwned) {
+    if (this.closeSubscriptionDialog) {
+      this.closeSubscriptionDialog();
+    }
+    this.activeHomeView.set('messages');
+    return; 
   }
+
+  const user = this.currentUser();
+  const serviceIds = this.selectedServiceIds();
+  const provider = this.selectedProvider();
+
+  if (!user || !serviceIds.length) return;
+
+  this.isCreatingCheckout.set(true);
+  this.checkoutErrorMessage.set('');
+
+  this.homeApi
+    .createSubscriptionCheckout({
+      userId: user.id,
+      serviceIds,
+      provider,
+    })
+    .subscribe({
+      next: (response) => {
+        if (response.paymentUrl) {
+          window.location.href = response.paymentUrl;
+        }
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isCreatingCheckout.set(false);
+        console.error('Lỗi từ Backend:', error);
+
+        if (error.status === 400 && error.error?.message === 'ALREADY_OWNED') {
+          if (this.closeSubscriptionDialog) {
+            this.closeSubscriptionDialog();
+          }
+          this.activeHomeView.set('messages');
+          const adminId = '69e219439a52b345c0c82898';
+          const admin = this.friends().find(f => (f.id === adminId ));
+          if (admin) {
+            this.openChat(admin);
+          }
+        } else {
+          const msg = provider === 'PAYPAL' ? 'PayPal' : 'VNPay';
+          const serverMsg = error.error?.message ?? `Unable to prepare your ${msg} checkout.`;
+          this.checkoutErrorMessage.set(serverMsg);
+        }
+      },
+    });
+}
   protected readonly historyPage = signal(1);
   protected readonly historyPageSize = 4;
   protected readonly historyStatusFilter = signal<'ALL' | 'APPROVED' | 'PENDING'>('ALL');

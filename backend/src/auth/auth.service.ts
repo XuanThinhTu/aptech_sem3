@@ -416,7 +416,28 @@ export class AuthService implements OnModuleInit {
       avatarUrl: this.toPublicAssetUrl(profile?.imageUrl ?? this.defaultAvatarPath),
     };
   }
+  async changePassword(userId: string, dto: { oldPassword: string; newPassword: string }) {
+    const user = await this.userModel.findById(userId).select('+passwordHash');
+    
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
 
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new BadRequestException('Current password is incorrect.');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, salt);
+
+    await this.userModel.updateOne(
+      { _id: userId },
+      { $set: { passwordHash: newPasswordHash } },
+    );
+
+    return { message: 'Password changed successfully.' };
+  }
   private toPublicAssetUrl(path?: string) {
     if (!path) {
       return '';
@@ -428,4 +449,6 @@ export class AuthService implements OnModuleInit {
 
     return `${this.backendBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   }
+
+
 }

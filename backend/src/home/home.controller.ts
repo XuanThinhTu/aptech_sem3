@@ -96,4 +96,9 @@ createSubscriptionCheckout(@Body() dto: CreateSubscriptionCheckoutDto) {
   async getSubscriptionHistory(@Query('userId') userId: string) {
     return this.homeService.getSubscriptionHistory(userId);
   }
+
+  @Post('subscriptions/check-ownership')
+  async checkOwnership(@Body() data: { userId: string, serviceKeys: string[] }) {
+      return await this.homeService.checkOwnership(data.userId, data.serviceKeys);
+  }
 }
