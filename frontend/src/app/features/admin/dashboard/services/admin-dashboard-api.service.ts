@@ -108,6 +108,7 @@ txnRef: string;
   paidAt: string;
   orderStatus: DashboardOrderStatus;
   paymentStatus: string;
+  userId: string;
 }
 
 export interface DashboardOrdersResponse {

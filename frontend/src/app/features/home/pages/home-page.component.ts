@@ -33,11 +33,12 @@ import {
   FriendProfileResponse,
   ProfileApiService,
 } from '../../profile/services/profile-api.service';
+import { ReaderPageComponent } from "./reader/reader-page.component";
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, SiteLayoutComponent, ChatPopupComponent],
+  imports: [CommonModule, FormsModule, SiteLayoutComponent, ChatPopupComponent, ReaderPageComponent,ReaderPageComponent],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.css',
 })
@@ -83,6 +84,7 @@ export class HomePageComponent implements OnInit {
   protected readonly chatSending = signal(false);
   protected readonly chatError = signal('');
   protected readonly selectedServiceIds = signal<string[]>([]);
+  protected readonly selectedService = signal<any>(null); 
   protected readonly serviceActionMessage = signal('');
   protected readonly checkoutErrorMessage = signal('');
   protected readonly showSubscriptionDialog = signal(false);
@@ -94,6 +96,7 @@ export class HomePageComponent implements OnInit {
   protected readonly connectedFriendsCount = computed(
     () => this.friends().filter((friend) => friend.isOnline).length,
   );
+  
   protected readonly sortedFriends = computed(() =>
     [...this.friends()].sort((left, right) => {
       if (right.unreadCount !== left.unreadCount) {
@@ -325,7 +328,7 @@ export class HomePageComponent implements OnInit {
   }
   private loadOrderHistory() {
     const user = this.currentUser();
-    console.log('1. Kiểm tra User:', user); //check nhẹ cái lỗi sợ vcl
+    console.log('1. Kiểm tra User:', user); // Xem có user chưa
     if (!user) return;
 
     this.ordersLoading.set(true);
@@ -361,9 +364,10 @@ export class HomePageComponent implements OnInit {
     const group = this.activeGroup();
     if (!user || !group || !content.trim()) return;
 
-    const groupId = (group as any)._id || group.id; 
+    const groupId = (group as any)._id || group.id; // Lấy ID chuẩn
 
     this.chatSending.set(true);
+    // FIX: Đảm bảo truyền đúng thứ tự tham số khớp với service
     this.chatApi.sendGroupMessage(user.id, groupId, content).subscribe({
       next: (response) => {
         this.groupMessages.update((msgs) => [...msgs, response.chatMessage]);
@@ -798,6 +802,42 @@ protected confirmSubscriptionCheckout() {
       );
     });
   }
+protected readonly ownedServiceIds = computed(() => {
+  const orders = this.myOrders();
+  
+  const successfulOrders = orders.filter(order => 
+    order.status?.toLowerCase() === 'success'
+  );
+  const ids: string[] = [];
+  
+  successfulOrders.forEach(order => {
+    const title = order.serviceTitle || '';
+    const cleanTitle = title.replace(/Buy:|Subscription order:/gi, '').trim();
+    
+    if (cleanTitle) {
+      const parts = cleanTitle.split(',').map((p: string) => p.trim());
+      ids.push(...parts);
+    }
+  });
+
+  console.log('--- DANH SÁCH TÊN/ID ĐÃ MUA ---', ids);
+  return ids;
+});
+
+protected isServiceOwned(serviceTitle: string): boolean {
+  if (!serviceTitle) return false;
+  return this.ownedServiceIds().includes(serviceTitle.trim());
+}
+
+protected openServiceContent(service: any) {
+  console.log("Đã bấm nút!", service); 
+  this.selectedService.set(service); 
+}
+
+protected openQuickSend(service: any) {
+  console.log('Gửi nhanh gói:', service.title);
+}
+
 
   private normalizeChatMessage(payload: Partial<ChatMessage>, currentUserId: string): ChatMessage {
     const senderUserId = String(payload.senderUserId ?? '');

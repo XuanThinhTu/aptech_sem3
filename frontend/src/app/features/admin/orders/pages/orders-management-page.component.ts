@@ -145,17 +145,17 @@ export class OrdersManagementPageComponent {
     this.orderPreview.set(null);
   }
 
-  getPrimaryActionLabel(status: string | undefined): string {
-  
-  switch (status) {
-    case 'pending':
+  protected getPrimaryActionLabel(status: DashboardOrderStatus) {
+    if (status === 'pending') {
       return 'Approve';
-    case 'approved':
+    }
+
+    if (status === 'approved') {
       return 'Complete';
-    default:
-      return '';
+    }
+
+    return '';
   }
-}
 
   protected updateStatus(order: DashboardOrderItem) {
     const nextStatus: DashboardOrderStatus =
@@ -167,65 +167,67 @@ export class OrdersManagementPageComponent {
     this.submitStatusUpdate(order, 'cancelled');
   }
 
-  private submitStatusUpdate(order: DashboardOrderItem, nextStatus: DashboardOrderStatus) {
-    const currentUser = this.currentUser();
-    if (!currentUser || this.isUpdatingStatus()) {
-      return;
-    }
+private submitStatusUpdate(order: DashboardOrderItem, nextStatus: DashboardOrderStatus) {
+  const currentUser = this.currentUser();
+  if (!currentUser || this.isUpdatingStatus()) {
+    return;
+  }
 
-    this.isUpdatingStatus.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
+  this.isUpdatingStatus.set(true);
+  this.errorMessage.set('');
+  this.successMessage.set('');
 
-    this.dashboardApi.updateOrderStatus(order.id, currentUser.id, nextStatus).subscribe({
+  this.dashboardApi.updateOrderStatus(order.id, currentUser.id, nextStatus).subscribe({
+    next: (response) => {
+    
+      this.successMessage.set(response.message);
+      this.isUpdatingStatus.set(false);
+      
+      if (this.orderPreview()?.id === order.id) {
+        this.orderPreview.update((current) =>
+          current ? { ...current, orderStatus: nextStatus } : current,
+        );
+      }
+      this.loadOrders();
+    },
+    error: (error: HttpErrorResponse) => {
+
+      this.errorMessage.set(  
+        error.error?.message ?? 'Unable to update this order right now.',
+      );
+      this.isUpdatingStatus.set(false);
+    },
+  });
+}
+  private loadOrders() {
+  this.isLoading.set(true);
+
+  this.dashboardApi
+    .getOrders({
+      page: this.currentPage(),
+      pageSize: this.pageSize,
+      search: this.currentSearchValue().trim(),
+      status: this.activeTab(),
+    })
+    .subscribe({
       next: (response) => {
-        this.successMessage.set(response.message);
-        this.isUpdatingStatus.set(false);
-        if (this.orderPreview()?.id === order.id) {
-          this.orderPreview.update((current) =>
-            current ? { ...current, orderStatus: nextStatus } : current,
-          );
-        }
-        this.loadOrders();
+        this.orders.set(response.items);
+        this.pagination.set(response.pagination);
+        this.isLoading.set(false);
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage.set(
-          error.error?.message ?? 'Unable to update this order right now.',
+          error.error?.message ?? 'Unable to load orders right now.',
         );
-        this.isUpdatingStatus.set(false);
+        this.orders.set([]);
+        this.pagination.set({
+          page: 1,
+          pageSize: this.pageSize,
+          totalItems: 0,
+          totalPages: 1,
+        });
+        this.isLoading.set(false);
       },
     });
-  }
-
-  private loadOrders() {
-    this.isLoading.set(true);
-
-    this.dashboardApi
-      .getOrders({
-        page: this.currentPage(),
-        pageSize: this.pageSize,
-        search: this.currentSearchValue().trim(),
-        status: this.activeTab(),
-      })
-      .subscribe({
-        next: (response) => {
-          this.orders.set(response.items);
-          this.pagination.set(response.pagination);
-          this.isLoading.set(false);
-        },
-        error: (error: HttpErrorResponse) => {
-          this.errorMessage.set(
-            error.error?.message ?? 'Unable to load orders right now.',
-          );
-          this.orders.set([]);
-          this.pagination.set({
-            page: 1,
-            pageSize: this.pageSize,
-            totalItems: 0,
-            totalPages: 1,
-          });
-          this.isLoading.set(false);
-        },
-      });
-  }
+}
 }

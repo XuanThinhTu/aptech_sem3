@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs/internal/Observable';
+import { Observable } from 'rxjs';
 
 export interface HomeServiceCard {
   id: string;
@@ -10,19 +10,23 @@ export interface HomeServiceCard {
   imageUrl: string;
   monthlyPrice: number;
 }
+
 export interface HomeOrder {
   id: string;
   userId: string;
-  // serviceIds: string[]; 
-  txnRef: string;        
-  serviceTitle: string;   
-  amount: number;          
-  totalAmount: number;    
+  txnRef: string;
+  serviceTitle?: string;
+  amount: number;
+  totalAmount?: number;
   provider: 'VNPAY' | 'PAYPAL';
-  status: 'pending' | 'completed' | 'failed' | 'approved'; 
+  status: 'pending' | 'completed' | 'failed' | 'approved' | 'ACTIVE';
+  orderStatus?: string;
+  serviceTypes: string[];
   createdAt: string;
-  services?: any[]; 
+  updatedAt?: string;
+  orderInfo?: string;
 }
+
 export interface HomeFriend {
   id: string;
   username: string;
@@ -33,11 +37,12 @@ export interface HomeFriend {
   isOnline: boolean;
   unreadCount: number;
 }
+
 export interface HomeGroup {
   id: string;
   title: string;
   avatarUrl?: string;
-  adminId: string;   
+  adminId: string;
   memberIds: string[];
   lastMessage?: string;
   updatedAt: string;
@@ -46,7 +51,7 @@ export interface HomeGroup {
 export interface SubscriptionCheckoutPayload {
   userId: string;
   serviceIds: string[];
-  provider: 'VNPAY' | 'PAYPAL'; 
+  provider: 'VNPAY' | 'PAYPAL';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,10 +69,6 @@ export class HomeApiService {
     });
   }
 
-  /**
-   * Lấy danh sách các nhóm mà người dùng tham gia
-   * @param userId ID của người dùng hiện tại
-   */
   getGroups(userId: string) {
     return this.http.get<HomeGroup[]>(`${this.apiUrl}/groups`, {
       params: { userId },
@@ -77,32 +78,31 @@ export class HomeApiService {
   createSubscriptionCheckout(payload: SubscriptionCheckoutPayload) {
     return this.http.post<{ paymentUrl: string; txnRef: string }>(
       `${this.apiUrl}/subscriptions/checkout`,
-      payload,
+      payload
     );
   }
 
-
-  /**
-   * (Tùy chọn) Tạo nhóm mới
-   */
   createGroup(userId: string, groupData: { title: string, memberIds: string[] }) {
     return this.http.post<HomeGroup>(`${this.apiUrl}/groups`, {
       ownerId: userId,
       ...groupData
     });
   }
+
   getOrderHistory(userId: string) {
     return this.http.get<HomeOrder[]>(`${this.apiUrl}/subscriptions/history`, {
       params: { userId },
     });
   }
+
   getOrderDetails(orderId: string) {
-  return this.http.get<HomeOrder>(`${this.apiUrl}/subscriptions/order/${orderId}`);
-}
- checkServiceOwnership(userId: string, serviceKeys: string[]): Observable<{ owned: boolean }> {
-  return this.http.post<{ owned: boolean }>(`${this.apiUrl}/subscriptions/check-ownership`, {
+    return this.http.get<HomeOrder>(`${this.apiUrl}/subscriptions/order/${orderId}`);
+  }
+
+  checkServiceOwnership(userId: string, serviceKeys: string[]): Observable<{ owned: boolean }> {
+    return this.http.post<{ owned: boolean }>(`${this.apiUrl}/subscriptions/check-ownership`, {
       userId,
       serviceKeys
-  });
-}
+    });
+  }
 }

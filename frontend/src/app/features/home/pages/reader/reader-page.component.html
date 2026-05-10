@@ -1,0 +1,21 @@
+<div class="reader-overlay">
+  <div class="book-container">
+    <div class="page-left">
+      <span class="badge">AI CONNECTED</span>
+      <h2>{{ service?.title }}</h2>
+      <p class="description-small">Mô tả gốc: {{ service?.description }}</p>
+      
+      <div *ngIf="isGenerating" class="loader-box">
+        <div class="spinner"></div> <span>AI đang soạn thảo...</span>
+      </div>
+    </div>
+
+    <div class="page-right">
+      <button class="close-x" (click)="close()">✕</button>
+      <div class="paper-text">
+        {{ displayContent }}
+        <span class="cursor" *ngIf="!isGenerating && displayContent.length % 2 === 0">|</span>
+      </div>
+    </div>
+  </div>
+</div>

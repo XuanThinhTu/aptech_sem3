@@ -1,0 +1,62 @@
+.reader-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.8);
+  z-index: 99999; /* Đè lên tất cả mọi thứ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.book-container {
+  width: 850px;
+  height: 550px;
+  background: #fdfaf0;
+  display: flex;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.page-left {
+  flex: 4;
+  background: #f1ede3;
+  padding: 40px;
+  border-right: 2px solid #ddd;
+}
+
+.page-right {
+  flex: 6;
+  padding: 50px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.paper-text {
+  font-family: 'Georgia', serif;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: #333;
+  white-space: pre-wrap; /* Để nó nhận dấu xuống dòng \n */
+}
+
+.close-x {
+  position: absolute;
+  top: 15px; right: 20px;
+  font-size: 25px;
+  background: none; border: none;
+  cursor: pointer; color: #999;
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid #ccc;
+  border-top: 2px solid #000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block; margin-right: 8px;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }

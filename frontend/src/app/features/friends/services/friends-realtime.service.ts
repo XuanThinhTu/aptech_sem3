@@ -107,4 +107,16 @@ export class FriendsRealtimeService {
       this.socket = null;
     }
   }
+  sendMessage(message: Partial<FriendsRealtimeMessage>) {
+
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      const fullMessage = {
+        ...message,
+        timestamp: new Date().toISOString()
+      };
+      this.socket.send(JSON.stringify(fullMessage));
+    } else {
+      console.warn('WebSocket is not open. Unable to send message:', message);
+    }
+  }
 }

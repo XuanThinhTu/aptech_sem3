@@ -290,59 +290,88 @@
           }
         }
 
-        @case ('services') {
-          <section class="home-card services-section">
-            <div class="section-header services-header">
-              <div>
-                <p class="section-eyebrow">Marketplace</p>
-                <h2>Available Services</h2>
-                <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
-              </div>
+       @case ('services') {
+  <section class="home-card services-section">
+    <div class="section-header services-header">
+      <div>
+        <p class="section-eyebrow">Marketplace</p>
+        <h2>Available Services</h2>
+        <p>{{ servicesCountLabel() }} · {{ selectedServicesLabel() }}</p>
+      </div>
 
-              <button
-                type="button"
-                class="services-subscribe-button"
-                [disabled]="!selectedServiceIds().length"
-                (click)="subscribeSelectedServices()"
-              >
-                Subscribe selected
-              </button>
-            </div>
+      <button
+        type="button"
+        class="services-subscribe-button"
+        [disabled]="!selectedServiceIds().length"
+        (click)="subscribeSelectedServices()"
+      >
+        Subscribe selected
+      </button>
+    </div>
 
-            @if (serviceActionMessage()) {
-              <p class="services-feedback">{{ serviceActionMessage() }}</p>
-            }
+    @if (serviceActionMessage()) {
+      <p class="services-feedback">{{ serviceActionMessage() }}</p>
+    }
 
-            @if (servicesLoading()) {
-              <p class="empty-state">Loading services...</p>
-            } @else if (servicesError()) {
-              <p class="empty-state">{{ servicesError() }}</p>
-            } @else {
-              <div class="services-grid">
-                @for (service of services(); track $index) {
-                  <article class="service-card">
-                    <label class="service-check">
-                      <input
-                        type="checkbox"
-                        [checked]="isServiceSelected(service.id)"
-                        (change)="toggleService(service.id, $any($event.target).checked)"
-                      />
-                      <span>Select</span>
-                    </label>
+    @if (servicesLoading()) {
+      <p class="empty-state">Loading services...</p>
+    } @else if (servicesError()) {
+      <p class="empty-state">{{ servicesError() }}</p>
+    } @else {
+      <div class="services-grid">
+        @for (service of services(); track service.id) {
+         <article class="service-card" [class.owned]="isServiceOwned(service.title)">
+            
+    @if (!isServiceOwned(service.title)) {
+      <label class="service-check">
+        <input
+          type="checkbox"
+          [checked]="isServiceSelected(service.id)"
+          (change)="toggleService(service.id, $any($event.target).checked)"
+        />
+        <span>Chọn</span>
+      </label>
+    } @else {
+      <div class="service-owned-badge">
+        <span class="badge-icon">✓</span>
+        <span>Đã sở hữu</span>
+      </div>
+    }
 
-                    <img [src]="service.imageUrl" [alt]="service.title" />
+    <img [src]="service.imageUrl" [alt]="service.title" />
 
-                    <div class="service-copy">
-                      <h3>{{ service.title }}</h3>
-                      <strong class="service-price">{{ service.monthlyPrice | number }} VND</strong>
-                      <p>{{ service.description }}</p>
-                    </div>
-                  </article>
-                }
-              </div>
-            }
-          </section>
+    <div class="service-copy">
+      <h3>{{ service.title }}</h3>
+      <strong class="service-price">
+        @if (isServiceOwned(service.title)) {
+          <span class="status-active text-emerald-600">Đang hoạt động</span>
+        } @else {
+          {{ service.monthlyPrice | number }} VND
         }
+      </strong>
+      <p>{{ service.description }}</p>
+
+      @if (isServiceOwned(service.title)) {
+        <div class="service-actions-owned" style="display: flex; gap: 8px; margin-top: 12px;">
+          <button 
+            (click)="openServiceContent(service)"
+            style="flex: 1; background: #4f46e5; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+            📖 Đọc tin
+          </button>
+          <button 
+            (click)="openQuickSend(service)"
+            style="flex: 1; background: #10b981; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+            ⚡ Gửi nhanh
+          </button>
+        </div>
+      }
+    </div>
+</article>
+        }
+      </div>
+    }
+  </section>
+}
 
         @case ('history') {
           <section class="history-workspace">
@@ -1003,6 +1032,12 @@
       </div>
     </div>
   }
+    @if (selectedService()) {
+  <app-reader-page 
+    [service]="selectedService()" 
+    (closeReader)="selectedService.set(null)">
+  </app-reader-page>
+}
   @if (selectedOrder()) {
     <div
       class="modal-backdrop"
@@ -1052,4 +1087,6 @@
       </div>
     </div>
   }
+  
+  
 </app-site-layout>
