@@ -962,72 +962,30 @@ export class DashboardService {
     this.friendsRealtimeService.emitToUsers([], 'dashboard-overview-updated');
   }
 async createBroadcastContent(dto: any) {
+  console.log('Dữ liệu nhận từ FE:', dto); 
   try {
-    // 0. Ghim ID Admin ở đây để tránh lỗi 'undefined' khi FE không gửi lên
-    // ID này dùng để thỏa mãn cả logic tìm kiếm và lưu Database
     const adminId = '69e219439a52b345c0c82898'; 
 
-    // 1. Lưu bản ghi vào bảng lịch sử service_contents
     const newContent = new this.serviceContentModel({
       serviceType: dto.serviceType, 
       title: dto.title,
       content: dto.content,
       scheduledTime: dto.scheduledTime,
-      isSent: false,
+      isSent: false, 
     });
+    
     const savedContent = await newContent.save();
 
-    // 2. Tìm danh sách User ID
-    const paidUsers = await this.paymentModel.find({
-      serviceTypes: dto.serviceType,
-      status: PaymentStatus.SUCCESS
-    }).distinct('userId');
-
-    if (paidUsers && paidUsers.length > 0) {
-      // 3. Tạo tin nhắn tự động cho từng User
-    // Sửa lại đoạn map trong Backend của bro:
-const autoMessages = paidUsers.map(userId => ({
-  senderId: new Types.ObjectId(adminId),
-  receiverId: userId,
-  recipientUserId: new Types.ObjectId(userId), 
-  content: `[THÔNG BÁO TỰ ĐỘNG - ${dto.title}]: ${dto.content}`,
-  type: 'text',
-  isSystemMessage: true,
-  createdAt: new Date(),
-
-  recipientType: 'external', 
-  
-  senderUserId: new Types.ObjectId(adminId),
-  recipientPhoneNumber: '0900000000'
-}));
-console.log('--- PHIÊN BẢN CODE MỚI NHẤT ĐÃ CHẠY - RECIPIENT TYPE PHẢI LÀ EXTERNAL ---');
-console.log('Dữ liệu chuẩn bị lưu:', autoMessages[0].recipientType);
-
-      // Lưu hàng loạt vào bảng messages
-      await this.messageModel.insertMany(autoMessages);
-
-      // 4. Bắn Socket Realtime
-      paidUsers.forEach(userId => {
-        this.friendsRealtimeService.emitToUsers([String(userId)], 'new-message', {
-          senderId: adminId,
-          content: dto.content,
-          title: dto.title
-
-        });
-      });
-
-      // 5. Cập nhật trạng thái
-      savedContent.isSent = true;
-      await savedContent.save();
-    }
+    console.log(`✅ Đã lên lịch chiến dịch: "${dto.title}" lúc ${dto.scheduledTime}`);
     
     return savedContent;
+
   } catch (error: any) {
     console.error('LỖI KHI TẠO BROADCAST:', error);
-    // Quăng lỗi cụ thể ra để FE biết đường mà lần
     throw new InternalServerErrorException('Lỗi hệ thống: ' + (error.message || 'Unknown error'));
   }
 }
+
 
 async getBroadcastHistory(query: { page?: string; pageSize?: string }) {
   const page = parseInt(query.page || '1');

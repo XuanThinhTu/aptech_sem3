@@ -185,4 +185,5 @@ export class DashboardController {
   ) {
     return this.dashboardService.getBroadcastHistory({ page, pageSize });
   }
+  
 }

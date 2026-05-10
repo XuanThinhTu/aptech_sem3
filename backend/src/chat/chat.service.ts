@@ -112,58 +112,119 @@ export class ChatService {
     }));
   }
 
+  // async sendMessage(userId: string, friendUserId: string, rawContent: string) {
+  //   const [currentUserObjectId, friendUserObjectId] = this.validateIds(userId, friendUserId);
+  //   const content = rawContent.trim();
+  //   if (!content) {
+  //     throw new BadRequestException('Message content is required.');
+  //   }
+
+  //   await this.ensureFriends(currentUserObjectId, friendUserObjectId);
+
+  //   const [sender, recipient, recipientProfile] = await Promise.all([
+  //     this.userModel.findById(currentUserObjectId),
+  //     this.userModel.findById(friendUserObjectId),
+  //     this.profileModel.findOne({ userId: friendUserObjectId }).lean(),
+  //   ]);
+
+  //   if (!sender || !recipient) {
+  //     throw new BadRequestException('Chat account was not found.');
+  //   }
+
+  //   const message = await this.messageModel.create({
+  //     senderUserId: sender._id,
+  //     recipientUserId: recipient._id,
+  //     recipientPhoneNumber: recipient.mobileNumber,
+  //     recipientName: recipientProfile?.name ?? recipient.username,
+  //     content,
+  //     recipientType: MessageRecipientType.FRIEND,
+  //     isFree: true,
+  //     chargeAmount: 0,
+  //     countedAgainstDailyFreeLimit: false,
+  //     deliveryStatus: MessageDeliveryStatus.SENT,
+  //     isRead: false,
+  //     sentAt: new Date(),
+  //   });
+
+  //   const payload = await this.buildRealtimeMessagePayload(message, userId, friendUserId);
+
+  //   this.friendsRealtimeService.emitToUsers(
+  //     [userId, friendUserId],
+  //     'chat-message',
+  //     payload,
+  //   );
+  //   this.friendsRealtimeService.emitToUsers(
+  //     [friendUserId],
+  //     'unread-counts-updated',
+  //     { friendUserId: userId },
+  //   );
+
+  //   return {
+  //     message: 'Message sent successfully.',
+  //     chatMessage: payload,
+  //   };
+  // }
+  // Thêm hàm này vào Service của bro để dùng chung
   async sendMessage(userId: string, friendUserId: string, rawContent: string) {
-    const [currentUserObjectId, friendUserObjectId] = this.validateIds(userId, friendUserId);
-    const content = rawContent.trim();
-    if (!content) {
-      throw new BadRequestException('Message content is required.');
-    }
+  const [currentUserObjectId, friendUserObjectId] = this.validateIds(userId, friendUserId);
+  const content = rawContent.trim();
+  if (!content) throw new BadRequestException('Message content is required.');
 
-    await this.ensureFriends(currentUserObjectId, friendUserObjectId);
+  // Chat thường thì vẫn cần check bạn bè
+  await this.ensureFriends(currentUserObjectId, friendUserObjectId);
 
-    const [sender, recipient, recipientProfile] = await Promise.all([
-      this.userModel.findById(currentUserObjectId),
-      this.userModel.findById(friendUserObjectId),
-      this.profileModel.findOne({ userId: friendUserObjectId }).lean(),
-    ]);
+  const [sender, recipient, recipientProfile] = await Promise.all([
+    this.userModel.findById(currentUserObjectId),
+    this.userModel.findById(friendUserObjectId),
+    this.profileModel.findOne({ userId: friendUserObjectId }).lean(),
+  ]);
 
-    if (!sender || !recipient) {
-      throw new BadRequestException('Chat account was not found.');
-    }
+  if (!sender || !recipient) throw new BadRequestException('Chat account was not found.');
 
-    const message = await this.messageModel.create({
-      senderUserId: sender._id,
-      recipientUserId: recipient._id,
-      recipientPhoneNumber: recipient.mobileNumber,
-      recipientName: recipientProfile?.name ?? recipient.username,
-      content,
-      recipientType: MessageRecipientType.FRIEND,
-      isFree: true,
-      chargeAmount: 0,
-      countedAgainstDailyFreeLimit: false,
-      deliveryStatus: MessageDeliveryStatus.SENT,
-      isRead: false,
-      sentAt: new Date(),
-    });
+  // Gọi hàm Core
+  const payload = await this.processAndEmitMessage(sender, recipient, content, recipientProfile);
 
-    const payload = await this.buildRealtimeMessagePayload(message, userId, friendUserId);
+  return { message: 'Message sent successfully.', chatMessage: payload };
+}
+  async processAndEmitMessage(sender: any, recipient: any, content: string, recipientProfile: any) {
+  // 1. Tạo Message trong DB
+  const message = await this.messageModel.create({
+    senderUserId: sender._id,
+    recipientUserId: recipient._id,
+    recipientPhoneNumber: recipient.mobileNumber,
+    recipientName: recipientProfile?.name ?? recipient.username,
+    content,
+    recipientType: MessageRecipientType.FRIEND,
+    isFree: true,
+    chargeAmount: 0,
+    countedAgainstDailyFreeLimit: false,
+    deliveryStatus: MessageDeliveryStatus.SENT,
+    isRead: false,
+    sentAt: new Date(),
+  });
 
-    this.friendsRealtimeService.emitToUsers(
-      [userId, friendUserId],
-      'chat-message',
-      payload,
-    );
-    this.friendsRealtimeService.emitToUsers(
-      [friendUserId],
-      'unread-counts-updated',
-      { friendUserId: userId },
-    );
+  // 2. Build Payload chuẩn để FE nhận diện được
+  const payload = await this.buildRealtimeMessagePayload(
+    message, 
+    sender._id.toString(), 
+    recipient._id.toString()
+  );
 
-    return {
-      message: 'Message sent successfully.',
-      chatMessage: payload,
-    };
-  }
+  // 3. Bắn Socket (Đây là lý do UI sẽ tự nhảy tin nhắn)
+  this.friendsRealtimeService.emitToUsers(
+    [sender._id.toString(), recipient._id.toString()],
+    'chat-message', // Tên sự kiện mà FE đang chờ
+    payload,
+  );
+
+  this.friendsRealtimeService.emitToUsers(
+    [recipient._id.toString()],
+    'unread-counts-updated',
+    { friendUserId: sender._id.toString() },
+  );
+
+  return payload;
+}
 
   async markConversationRead(userId: string, friendUserId: string) {
     const [currentUserObjectId, friendUserObjectId] = this.validateIds(userId, friendUserId);
@@ -459,76 +520,93 @@ export class ChatService {
       readAt: message.readAt?.toISOString() ?? null,
     };
   }
-  @Cron(CronExpression.EVERY_MINUTE)
+@Cron(CronExpression.EVERY_MINUTE)
 async handleAdminScheduledBroadcast() {
   const now = new Date();
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  // Chuyển đổi sang múi giờ VN (GMT+7)
+  const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+  const hours = vnTime.getUTCHours().toString().padStart(2, '0');
+  const minutes = vnTime.getUTCMinutes().toString().padStart(2, '0');
+  const currentTime = `${hours}:${minutes}`;
 
+  console.log(`\n[${new Date().toLocaleString()}] 🔍 --- HỆ THỐNG ĐANG QUÉT TIN NHẮN ---`);
+  console.log(`⏱️ Giờ VN hiện tại: "${currentTime}"`);
+
+  // 1. Tìm tin nhắn đến giờ bay (Chỉ tìm những tin CHƯA GỬI và KHỚP GIỜ)
   const pendingContents = await this.serviceContentModel.find({
-    scheduledTime: currentTime,
+    scheduledTime: { $regex: new RegExp(`^\\s*${currentTime}\\s*$`) },
     isSent: false,
-  });
+  }).lean();
 
-  if (pendingContents.length === 0) return;
+  if (pendingContents.length === 0) {
+    const nextMsg = await this.serviceContentModel.findOne({ isSent: false }).sort({ scheduledTime: 1 });
+    if (nextMsg) {
+      console.log(`   🔸 Đang chờ đến: [${nextMsg.scheduledTime}] để gửi tin: "${nextMsg.title}"`);
+    } else {
+      console.log(`   📭 Không có tin nhắn nào đang chờ trong hàng đợi.`);
+    }
+    return;
+  }
 
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-    console.log('--- ĐANG CHECK CRON JOB ---');
-    console.log('Email Admin cấu hình trong ENV:', adminEmail);
+  // 2. Lấy thông tin Admin (người gửi)
+  const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+  const admin = await this.userModel.findOne({ email: adminEmail });
 
-    const admin = await this.userModel.findOne({ email: adminEmail });
+  if (!admin) {
+    console.error('   ❌ LỖI: Không tìm thấy Admin trong DB. Vui lòng check ADMIN_EMAIL trong .env');
+    return;
+  }
 
-    if (!admin) {
-      console.error(' LỖI NGHIÊM TRỌNG: Không tìm thấy Admin trong DB! Hãy kiểm tra lại email.');
-      return; 
+  // 3. Xử lý từng tin nhắn khớp giờ
+  for (const item of pendingContents) {
+    console.log(`🚀 KHỚP GIỜ! Bắt đầu xử lý chiến dịch: "${item.title}"`);
+    
+    // 4. Tìm tất cả người dùng có gói đăng ký ACTIVE cho dịch vụ này
+    // Sử dụng Regex để chấp cả "active" và "ACTIVE"
+    const activeSubs = await this.subscriptionModel.find({
+      serviceType: item.serviceType.toString().trim(),
+      status: { $regex: new RegExp('^active$', 'i') }
+    }).lean();
+
+    console.log(`   📊 Tìm thấy ${activeSubs.length} người đăng ký phù hợp.`);
+
+    if (activeSubs.length === 0) {
+      console.log(`   ⚠️ Bỏ qua: Không có ai đăng ký hoặc không có ai ở trạng thái ACTIVE.`);
+      // Đánh dấu true luôn để tránh việc nó quét đi quét lại một tin không có người nhận
+      await this.serviceContentModel.findByIdAndUpdate(item._id, { isSent: true });
+      continue;
     }
 
-    console.log(' Đã tìm thấy Admin ID:', admin._id);
-
-  for (const item of pendingContents) {
-    const activeSubs = await this.subscriptionModel.find({
-      serviceType: item.serviceType,
-      status: SubscriptionStatus.ACTIVE,
-    });
-
+    // 5. Vòng lặp gửi tin nhắn tới từng người dùng
     for (const sub of activeSubs) {
       try {
-        const messageContent = `[${item.title}]\n${item.content}`;
+        // Lấy thông tin User đầy đủ từ DB để lấy Username/Mobi (tránh lỗi Socket cần data thật)
+        const recipient = await this.userModel.findById(sub.userId).lean();
         
-        const newMessage = await this.messageModel.create({
-          senderUserId: admin._id,
-          recipientUserId: sub.userId,
-          content: messageContent,
-          recipientType: MessageRecipientType.FRIEND,
-          deliveryStatus: MessageDeliveryStatus.SENT,
-          sentAt: new Date(),
-          isRead: false,
-        });
+        if (!recipient) {
+          console.warn(`      ⏩ Bỏ qua UserID ${sub.userId} (Không tìm thấy trong bảng User)`);
+          continue;
+        }
 
-        const payload = await this.buildRealtimeMessagePayload(
-          newMessage, 
-          String(admin._id), 
-          String(sub.userId)
+        // Thực hiện gửi tin nhắn (Lưu DB Message + Emit Socket)
+        await this.processAndEmitMessage(
+          admin,
+          recipient,
+          `[${item.title}]\n${item.content}`,
+          null // recipientProfile (có thể để null nếu hàm xử lý được)
         );
 
-        this.friendsRealtimeService.emitToUsers(
-          [String(sub.userId)], 
-          'chat-message', 
-          payload
-        );
-        
-        this.friendsRealtimeService.emitToUsers(
-          [String(sub.userId)],
-          'unread-counts-updated',
-          { friendUserId: String(admin._id) },
-        );
+        console.log(`      ✅ Đã gửi tới: ${recipient.username || recipient.email || sub.userId}`);
       } catch (err) {
-        continue;
+        console.error(`      ❌ Lỗi khi gửi tới User ${sub.userId}:`, err.message);
       }
     }
 
-    item.isSent = true;
-    await item.save();
+    // 6. CẬP NHẬT TRẠNG THÁI: Đã gửi thành công
+    await this.serviceContentModel.findByIdAndUpdate(item._id, { isSent: true });
+    console.log(`🏁 HOÀN TẤT: Đã gửi xong chiến dịch "${item.title}"`);
   }
+  console.log(`--------------------------------------------------------\n`);
 }
 async sendWelcomeServiceMessage(userId: string, serviceType: string) {
   const adminEmail = this.configService.get<string>('ADMIN_EMAIL');

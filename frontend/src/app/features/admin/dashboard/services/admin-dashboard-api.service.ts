@@ -212,9 +212,9 @@ export class AdminDashboardApiService {
       params: { actorUserId },
     });
   }
-  sendBroadcast(payload: BroadcastPayload) {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/services/broadcast`, payload);
-  }
+ sendBroadcast(payload: BroadcastPayload) {
+  return this.http.post(`${this.apiUrl}/services/broadcast`, payload);
+}
 
   getOrders(params: {
     page: number;
