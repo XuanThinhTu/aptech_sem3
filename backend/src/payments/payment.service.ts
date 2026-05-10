@@ -1,10 +1,25 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import * as paypal from '@paypal/checkout-server-sdk';
+import { ServiceSubscription, ServiceSubscriptionDocument } from '../database/schemas/service-subscription.schema';
+import { ContentService, ContentServiceDocument } from '../database/schemas/content-service.schema';
+import { SubscriptionStatus } from '../database/enums/database.enums';
+import { ChatService } from 'src/chat/chat.service';
+
 @Injectable()
 export class PaypalService {
   private client: paypal.core.PayPalHttpClient;
 
-  constructor() {
+  constructor(
+    @InjectModel('Payment') 
+    private readonly paymentModel: Model<any>,
+    @InjectModel(ServiceSubscription.name) 
+    private readonly subscriptionModel: Model<ServiceSubscriptionDocument>,
+    @InjectModel(ContentService.name) 
+    private readonly contentServiceModel: Model<ContentServiceDocument>,
+    private readonly chatService: ChatService,
+  ) {
     const environment = new paypal.core.SandboxEnvironment(
       process.env.PAYPAL_CLIENT_ID!,
       process.env.PAYPAL_CLIENT_SECRET!,
@@ -12,17 +27,16 @@ export class PaypalService {
     this.client = new paypal.core.PayPalHttpClient(environment);
   }
 
-  async createOrder(amountVND: number, txnRef: string) {
-    // PayPal không hỗ trợ VND, chia cho 25000 để ra USD
+async createOrder(amountVND: number, txnRef: string, userId: string, serviceTypes: any) {
     const amountUSD = (amountVND / parseFloat(process.env.VNPAY_EXCHANGE_RATE!)).toFixed(2);
-
     const request = new paypal.orders.OrdersCreateRequest();
+    
     request.prefer('return=representation');
     request.requestBody({
       intent: 'CAPTURE',
       purchase_units: [
         {
-          reference_id: txnRef, // Mã giao dịch của bạn
+          reference_id: txnRef,
           amount: {
             currency_code: 'USD',
             value: amountUSD,
@@ -33,19 +47,132 @@ export class PaypalService {
         brand_name: 'My Service App',
         landing_page: 'LOGIN',
         user_action: 'PAY_NOW',
-        return_url: 'http://localhost:3000/api/home/subscriptions/paypal-return', 
+        return_url: 'http://localhost:3000/api/home/subscriptions/paypal-return',
         cancel_url: 'http://localhost:4200/profile?payment=cancelled',
       },
     });
 
     const response = await this.client.execute(request);
-    return response.result; // Trả về thông tin đơn hàng (ID và Link)
+    const result = response.result;
+
+    await this.paymentModel.create({
+      userId: new Types.ObjectId(userId),
+      provider: 'PAYPAL',
+      txnRef: result.id, 
+      amount: amountVND,
+      currency: 'VND',
+      status: 'pending',
+      serviceTypes: serviceTypes,
+      orderStatus: 'pending',
+      createdAt: new Date(),
+    });
+
+    return result;
+  }
+async captureOrder(orderId: string, userId: string, serviceType: any, amountVND: number) {
+    const request = new paypal.orders.OrdersCaptureRequest(orderId);
+    
+    const response = await this.client.execute(request);
+    const result = response.result;
+
+    if (result.status === 'COMPLETED') {
+      await this.handleSuccessfulSubscription(
+        userId, 
+        orderId, 
+        serviceType, 
+        amountVND
+      );
+    }
+
+    return result;
   }
 
-  // Hàm xác nhận đã thu tiền (Capture)
-  async captureOrder(orderId: string) {
-    const request = new paypal.orders.OrdersCaptureRequest(orderId);
-    const response = await this.client.execute(request);
-    return response.result;
+  async handleSuccessfulSubscription(
+  userId: string, 
+  orderId: string, 
+  serviceType: any, 
+  amountVND: number,
+  selectedTime: string = '08:00' 
+) {
+  await this.paymentModel.findOneAndUpdate(
+    { txnRef: orderId },
+    {
+      status: 'success',
+      orderStatus: 'completed',
+      paidAt: new Date(),
+    },
+    { upsert: true }
+  );
+
+  const expiryDate = new Date();
+  expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+  const sub = await this.subscriptionModel.findOneAndUpdate(
+    { userId: new Types.ObjectId(userId), serviceType: serviceType },
+    {
+      status: SubscriptionStatus.ACTIVE,
+      activatedAt: new Date(),
+      expiresAt: expiryDate,
+      priceAmount: amountVND,
+      scheduledTime: selectedTime, 
+      isAutoSendEnabled: true,
+    },
+    { upsert: true, new: true }
+  );
+
+  try {
+    await this.chatService.sendWelcomeServiceMessage(userId, serviceType);
+  } catch (error) {
+    console.error('Lỗi gửi tin nhắn chào mừng:', error);
+  }
+
+  return sub;
+}
+
+  async activateSubscriptionsFromPayment(paymentData: any) {
+    if (paymentData.status !== 'success' || paymentData.orderStatus !== 'completed') {
+      return;
+    }
+
+    const { userId, serviceTypes, amount } = paymentData;
+    const results = [];
+
+    for (const type of serviceTypes) {
+      const serviceInfo = await this.contentServiceModel.findOne({ 
+        $or: [{ key: type }, { name: type }] 
+      });
+      
+      const finalPrice = serviceInfo ? serviceInfo.monthlyPrice : (amount / serviceTypes.length);
+      const serviceName = serviceInfo ? serviceInfo.name : type; 
+      
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+      const sub = await this.subscriptionModel.findOneAndUpdate(
+        { 
+          userId: new Types.ObjectId(userId), 
+          serviceType: type 
+        },
+        {
+          status: SubscriptionStatus.ACTIVE,
+          activatedAt: new Date(),
+          expiresAt: expiryDate,
+          priceAmount: finalPrice,
+          scheduledTime: '08:00',
+          isAutoSendEnabled: true,
+        },
+        { upsert: true, new: true }
+      );
+
+      try {
+        await this.chatService.sendWelcomeServiceMessage(userId.toString(), serviceName);
+      } catch (error) {
+        console.error('Lỗi gửi tin nhắn chào mừng:', error);
+      }
+
+      results.push(sub);
+    }
+
+    return results;
   }
 }

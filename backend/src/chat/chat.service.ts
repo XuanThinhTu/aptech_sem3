@@ -4,12 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
   MessageDeliveryStatus,
   MessageRecipientType,
+  SubscriptionStatus,
 } from '../database/enums/database.enums';
 import { Friendship, FriendshipDocument } from '../database/schemas/friendship.schema';
 import { Message, MessageDocument } from '../database/schemas/message.schema';
@@ -17,7 +19,8 @@ import { Profile, ProfileDocument } from '../database/schemas/profile.schema';
 import { User, UserDocument } from '../database/schemas/user.schema';
 import { Conversation, ConversationDocument } from '../database/schemas/conversation.schema';
 import { FriendsRealtimeService } from '../friends/friends-realtime.service';
-
+import { ServiceContent, ServiceContentDocument } from 'src/database/schemas/service-content.schema';
+import { ServiceSubscription, ServiceSubscriptionDocument } from 'src/database/schemas/service-subscription.schema';
 @Injectable()
 export class ChatService {
   private readonly backendBaseUrl: string;
@@ -36,6 +39,10 @@ export class ChatService {
     private readonly profileModel: Model<ProfileDocument>,
     @InjectModel(Conversation.name)
     private readonly conversationModel: Model<ConversationDocument>,
+    @InjectModel(ServiceContent.name)
+    private readonly serviceContentModel: Model<ServiceContentDocument>,
+    @InjectModel(ServiceSubscription.name)
+    private readonly subscriptionModel: Model<ServiceSubscriptionDocument>,
   ) {
     this.backendBaseUrl =
       this.configService.get<string>('BACKEND_BASE_URL') ?? 'http://127.0.0.1:3000';
@@ -370,17 +377,14 @@ export class ChatService {
       throw new NotFoundException('Group not found.');
     }
 
-    // Kiểm tra quyền: Chỉ admin mới được đuổi người
     if (String(conversation.adminId) !== adminId) {
       throw new ForbiddenException('Only admin can kick members.');
     }
 
-    // Không được tự đuổi chính mình (muốn rời nhóm thì dùng logic khác)
     if (adminId === targetUserId) {
       throw new BadRequestException('Admin cannot kick themselves. Use disband instead.');
     }
 
-    // Thực hiện xóa member khỏi mảng memberIds
     const updatedConversation = await this.conversationModel.findByIdAndUpdate(
       conversationId,
       { $pull: { memberIds: new Types.ObjectId(targetUserId) } },
@@ -455,7 +459,115 @@ export class ChatService {
       readAt: message.readAt?.toISOString() ?? null,
     };
   }
+  @Cron(CronExpression.EVERY_MINUTE)
+async handleAdminScheduledBroadcast() {
+  const now = new Date();
+  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
+  const pendingContents = await this.serviceContentModel.find({
+    scheduledTime: currentTime,
+    isSent: false,
+  });
+
+  if (pendingContents.length === 0) return;
+
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+    console.log('--- ĐANG CHECK CRON JOB ---');
+    console.log('Email Admin cấu hình trong ENV:', adminEmail);
+
+    const admin = await this.userModel.findOne({ email: adminEmail });
+
+    if (!admin) {
+      console.error(' LỖI NGHIÊM TRỌNG: Không tìm thấy Admin trong DB! Hãy kiểm tra lại email.');
+      return; 
+    }
+
+    console.log(' Đã tìm thấy Admin ID:', admin._id);
+
+  for (const item of pendingContents) {
+    const activeSubs = await this.subscriptionModel.find({
+      serviceType: item.serviceType,
+      status: SubscriptionStatus.ACTIVE,
+    });
+
+    for (const sub of activeSubs) {
+      try {
+        const messageContent = `[${item.title}]\n${item.content}`;
+        
+        const newMessage = await this.messageModel.create({
+          senderUserId: admin._id,
+          recipientUserId: sub.userId,
+          content: messageContent,
+          recipientType: MessageRecipientType.FRIEND,
+          deliveryStatus: MessageDeliveryStatus.SENT,
+          sentAt: new Date(),
+          isRead: false,
+        });
+
+        const payload = await this.buildRealtimeMessagePayload(
+          newMessage, 
+          String(admin._id), 
+          String(sub.userId)
+        );
+
+        this.friendsRealtimeService.emitToUsers(
+          [String(sub.userId)], 
+          'chat-message', 
+          payload
+        );
+        
+        this.friendsRealtimeService.emitToUsers(
+          [String(sub.userId)],
+          'unread-counts-updated',
+          { friendUserId: String(admin._id) },
+        );
+      } catch (err) {
+        continue;
+      }
+    }
+
+    item.isSent = true;
+    await item.save();
+  }
+}
+async sendWelcomeServiceMessage(userId: string, serviceType: string) {
+  const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+  const admin = await this.userModel.findOne({ email: adminEmail });
+
+  if (!admin) return;
+
+  const welcomeContent = `Cảm ơn bạn đã đăng ký gói dịch vụ [${serviceType}]. Hệ thống đã kích hoạt thành công, nội dung sẽ được gửi đến bạn định kỳ hàng ngày!`;
+
+  const newMessage = await this.messageModel.create({
+    senderUserId: admin._id,
+    recipientUserId: new Types.ObjectId(userId),
+    content: welcomeContent,
+    recipientType: MessageRecipientType.FRIEND,
+    deliveryStatus: MessageDeliveryStatus.SENT,
+    sentAt: new Date(),
+    isRead: false,
+  });
+
+  const payload = await this.buildRealtimeMessagePayload(
+    newMessage,
+    String(admin._id),
+    userId
+  );
+
+  this.friendsRealtimeService.emitToUsers(
+    [userId], 
+    'chat-message', 
+    payload
+  );
+
+  this.friendsRealtimeService.emitToUsers(
+    [userId],
+    'unread-counts-updated',
+    { friendUserId: String(admin._id) },
+  );
+
+  return newMessage;
+}
   private toPublicAssetUrl(path?: string) {
     if (!path) {
       return '';

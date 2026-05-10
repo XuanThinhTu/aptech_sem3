@@ -13,10 +13,11 @@ import { User, UserSchema } from '../database/schemas/user.schema';
 import { FriendsModule } from '../friends/friends.module';
 import { HomeController } from './home.controller';
 import { HomeService } from './home.service';
-import { PaypalService } from '../payments/payment.service'; // 
+import { PaypalService } from '../payments/payment.service'; 
+import { ChatModule } from '../chat/chat.module'; 
 @Module({
   imports: [
-    FriendsModule,
+    FriendsModule,ChatModule,
     MongooseModule.forFeature([
       { name: ContentService.name, schema: ContentServiceSchema },
       { name: Friendship.name, schema: FriendshipSchema },

@@ -145,17 +145,17 @@ export class OrdersManagementPageComponent {
     this.orderPreview.set(null);
   }
 
-  protected getPrimaryActionLabel(status: DashboardOrderStatus) {
-    if (status === 'pending') {
+  getPrimaryActionLabel(status: string | undefined): string {
+  
+  switch (status) {
+    case 'pending':
       return 'Approve';
-    }
-
-    if (status === 'approved') {
+    case 'approved':
       return 'Complete';
-    }
-
-    return '';
+    default:
+      return '';
   }
+}
 
   protected updateStatus(order: DashboardOrderItem) {
     const nextStatus: DashboardOrderStatus =

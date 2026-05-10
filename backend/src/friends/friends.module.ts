@@ -8,6 +8,7 @@ import { FriendsController } from './friends.controller';
 import { FriendsRealtimeService } from './friends-realtime.service';
 import { FriendsService } from './friends.service';
 
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -18,7 +19,7 @@ import { FriendsService } from './friends.service';
     ]),
   ],
   controllers: [FriendsController],
-  providers: [FriendsService, FriendsRealtimeService],
+  providers: [FriendsService, FriendsRealtimeService, ],
   exports: [FriendsRealtimeService],
 })
 export class FriendsModule {}

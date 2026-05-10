@@ -17,6 +17,7 @@ type FriendsRealtimeEvent =
   | 'kicked-from-group'
   | 'member-kicked'
   | 'group-disbanded'
+  |'new-message'
 
 
 @Injectable()
@@ -103,23 +104,34 @@ export class FriendsRealtimeService {
     return FriendsRealtimeService.getOnlineUserIds().length;
   }
 
-  emitToUsers(userIds: string[], event: FriendsRealtimeEvent, payload?: Record<string, unknown>) {
-    if (!FriendsRealtimeService.allConnections.size) {
-      return;
-    }
+ emitToUsers(userIds: string[], event: FriendsRealtimeEvent, payload?: Record<string, unknown>) {
+  console.log(` Đang phát sự kiện [${event}] tới ${userIds.length || 'tất cả'} người dùng`);
+  const message = JSON.stringify({
+    event,
+    payload: payload ?? {},
+    timestamp: new Date().toISOString(),
+  });
 
-    const message = JSON.stringify({
-      event,
-      payload: payload ?? {},
-      timestamp: new Date().toISOString(),
-    });
-
+  if (userIds.length === 0) {
     for (const socket of FriendsRealtimeService.allConnections) {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(message);
       }
     }
+    return;
   }
+
+  userIds.forEach(userId => {
+    const sockets = FriendsRealtimeService.userConnections.get(userId);
+    if (sockets) {
+      for (const socket of sockets) {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(message);
+        }
+      }
+    }
+  });
+}
 
   private emitPresenceChanged() {
     this.emitToUsers([], 'presence-updated');

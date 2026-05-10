@@ -16,5 +16,6 @@ export class AdminDashboardLayoutComponent {
     { label: 'Account', route: '/dashboard/accounts' },
     { label: 'Services', route: '/dashboard/services' },
     { label: 'Order', route: '/dashboard/orders' },
+    { label: 'Broadcast', route: '/dashboard/broadcast' }, 
   ];
 }

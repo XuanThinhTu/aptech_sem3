@@ -70,6 +70,16 @@ export interface DashboardServiceItem {
   isActive: boolean;
   createdAt: string;
 }
+export interface BroadcastHistoryItem {
+  _id: string;
+  serviceType: string;
+  title: string;
+  content: string;
+  scheduledTime: string;
+  isSent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface DashboardServicesResponse {
   items: DashboardServiceItem[];
@@ -87,6 +97,7 @@ export interface DashboardServicesResponse {
 export type DashboardOrderStatus = 'pending' | 'approved' | 'completed' | 'cancelled';
 
 export interface DashboardOrderItem {
+txnRef: string;
   id: string;
   orderCode: string;
   serviceName: string;
@@ -128,6 +139,12 @@ export interface ServicePayload {
   imageFile: File | null;
   isActive: boolean;
 }
+  export interface BroadcastPayload {
+    serviceType: string;
+    title: string;
+    content: string;
+    scheduledTime: string;
+  }
 
 @Injectable({ providedIn: 'root' })
 export class AdminDashboardApiService {
@@ -147,6 +164,12 @@ export class AdminDashboardApiService {
         role: params.role,
       },
     });
+  }
+  getBroadcastHistory() {
+    return this.http.get<{ data: BroadcastHistoryItem[] }>(`${this.apiUrl}/services/broadcast-history`);
+  }
+  deleteBroadcast(id: string) {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/services/broadcast/${id}`);
   }
 
   createAdminAccount(payload: CreateAdminAccountPayload) {
@@ -188,6 +211,9 @@ export class AdminDashboardApiService {
     }>(`${this.apiUrl}/services/${serviceId}`, {
       params: { actorUserId },
     });
+  }
+  sendBroadcast(payload: BroadcastPayload) {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/services/broadcast`, payload);
   }
 
   getOrders(params: {

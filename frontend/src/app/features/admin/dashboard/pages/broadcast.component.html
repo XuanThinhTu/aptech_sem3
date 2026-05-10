@@ -1,0 +1,101 @@
+<div class="dashboard-page">
+  <h2>Create Automated Broadcast</h2>
+  
+  <!-- FORM TẠO MỚI -->
+  <form (submit)="onSendBroadcast()" class="broadcast-form">
+    <div class="form-group">
+      <label>Target Service</label>
+      <select [(ngModel)]="broadcastData.serviceType" name="serviceType" required>
+        <option value="" disabled>-- Select a Service --</option>
+        @for (service of services(); track service.id) {
+          <option [value]="service.id">
+            {{ service.name }}
+          </option>
+        } @empty {
+          <option value="" disabled>No active services found</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Title</label>
+      <input 
+        type="text" 
+        [(ngModel)]="broadcastData.title" 
+        name="title" 
+        placeholder="e.g., Weekly Newsletter" 
+        required 
+      >
+    </div>
+
+    <div class="form-group">
+      <label>Message Content</label>
+      <textarea 
+        [(ngModel)]="broadcastData.content" 
+        name="content" 
+        rows="5" 
+        placeholder="Enter your message or links here..." 
+        required
+      ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Schedule Time (24h)</label>
+      <input 
+        type="time" 
+        [(ngModel)]="broadcastData.scheduledTime" 
+        name="scheduledTime" 
+        required
+      >
+    </div>
+
+    <button type="submit" class="btn-send" [disabled]="isLoading() || services().length === 0">
+      {{ isLoading() ? 'Processing...' : 'Schedule Broadcast' }}
+    </button>
+  </form>
+
+  <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+
+  <!-- BẢNG QUẢN LÝ LỊCH SỬ -->
+  <h3>Broadcast History & Queue</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Ngày tạo</th>
+        <th>Dịch vụ</th>
+        <th>Tiêu đề</th>
+        <th>Hẹn giờ</th>
+        <th>Trạng thái</th>
+        <th>Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of broadcastHistory(); track item._id) {
+        <tr>
+          <td>{{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span class="badge" style="background: #e0e0e0; padding: 4px 8px; border-radius: 4px;">
+              {{ getServiceName(item.serviceType) }}
+            </span>
+          </td>
+          <td>{{ item.title }}</td>
+          <td>{{ item.scheduledTime }}</td>
+          <td>
+            <span [style.color]="item.isSent ? '#2ecc71' : '#f39c12'" style="font-weight: bold;">
+              {{ item.isSent ? '● Đã gửi' : '● Chờ gửi' }}
+            </span>
+          </td>
+          <td>
+            <button (click)="onDelete(item._id)" class="btn-delete" style="color: red; cursor: pointer; border: none; background: none;">
+              [Xóa]
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px;">Chưa có nội dung nào được tạo.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -247,7 +247,13 @@ async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
   });
 
   if (dto.provider === 'PAYPAL') {
-    const order = await this.paypalService.createOrder(totalAmount, txnRef);
+    const order = await this.paypalService.createOrder(
+      totalAmount, 
+      txnRef, 
+      dto.userId, 
+      dto.serviceIds,
+    );
+    
     const approvalLink = order.links.find((l: any) => l.rel === 'approve')?.href;
 
     if (!approvalLink) {
@@ -256,7 +262,7 @@ async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
 
     return {
       paymentUrl: approvalLink,
-      txnRef,
+      txnRef: order.id,
     };
   }
 
@@ -382,7 +388,18 @@ async createSubscriptionCheckout(dto: CreateSubscriptionCheckoutDto) {
 
 async handlePaypalReturn(orderId: string): Promise<string> {
   try {
-    const capture = await this.paypalService.captureOrder(orderId);
+    const pendingPayment = await this.paymentModel.findOne({ txnRef: orderId });
+
+    if (!pendingPayment) {
+      throw new Error('Không tìm thấy thông tin giao dịch');
+    }
+
+    const capture = await this.paypalService.captureOrder(
+      orderId, 
+      pendingPayment.userId.toString(), 
+      pendingPayment.serviceTypes, 
+      pendingPayment.amount
+    );
 
     if (capture.status === 'COMPLETED') {
       await this.paymentModel.findOneAndUpdate(
@@ -395,10 +412,9 @@ async handlePaypalReturn(orderId: string): Promise<string> {
         }
       );
 
-      
       return 'http://localhost:4200/payment-success?status=success';
     } else {
-      throw new Error('Thanh toán chưa hoàn tất');
+      throw new Error('Thanh toán trên PayPal chưa hoàn tất');
     }
   } catch (error) {
     console.error('Lỗi PayPal Capture:', error);
@@ -411,7 +427,6 @@ async handlePaypalReturn(orderId: string): Promise<string> {
     return 'http://localhost:4200/payment-failed?status=failed';
   }
 }
-
   private buildVnpayPaymentUrl(input: {
     txnRef: string;
     amount: number;

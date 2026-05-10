@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs'; // Dùng RxJS chuẩn
+import { Observable } from 'rxjs'; 
 
 export interface ChatMessage {
   id: string;

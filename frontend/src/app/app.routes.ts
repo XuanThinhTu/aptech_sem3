@@ -10,6 +10,7 @@ import { AccountManagementPageComponent } from './features/admin/accounts/pages/
 import { ServicesManagementPageComponent } from './features/admin/services/pages/services-management-page.component';
 import { OrdersManagementPageComponent } from './features/admin/orders/pages/orders-management-page.component';
 import { AdminProfilePageComponent } from './features/admin/profile/pages/admin-profile-page.component';
+import { BroadcastComponent } from './features/admin/dashboard/pages/broadcast.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent },
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'services', component: ServicesManagementPageComponent },
       { path: 'orders', component: OrdersManagementPageComponent },
       { path: 'profile', component: AdminProfilePageComponent },
+      { path: 'broadcast', component: BroadcastComponent },
     ],
   },
   { path: '**', redirectTo: '' },

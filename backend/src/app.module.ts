@@ -10,6 +10,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { FriendsModule } from './friends/friends.module';
 import { HomeModule } from './home/home.module';
 import { ProfileModule } from './profile/profile.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ProfileModule } from './profile/profile.module';
           'mongodb://127.0.0.1:27017/project_sem3',
       }),
     }),
+    ScheduleModule.forRoot(), 
     AuthModule,
     ChatModule,
     DatabaseModule,

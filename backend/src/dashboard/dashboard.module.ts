@@ -13,6 +13,8 @@ import { User, UserSchema } from '../database/schemas/user.schema';
 import { FriendsModule } from '../friends/friends.module';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import { ServiceContent, ServiceContentSchema } from 'src/database/schemas/service-content.schema';
+import { Message, MessageSchema } from 'src/database/schemas/message.schema';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { DashboardService } from './dashboard.service';
       { name: ContentService.name, schema: ContentServiceSchema },
       { name: ServiceSubscription.name, schema: ServiceSubscriptionSchema },
       { name: Payment.name, schema: PaymentSchema },
+      { name: ServiceContent.name, schema: ServiceContentSchema },
+      { name: Message.name, schema: MessageSchema },
     ]),
   ],
   controllers: [DashboardController],

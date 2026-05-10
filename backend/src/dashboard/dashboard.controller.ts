@@ -20,8 +20,8 @@ import { CreateAdminAccountDto } from './dto/create-admin-account.dto';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { DashboardService } from './dashboard.service';
+import { CreateBroadcastDto } from './dto/create-broadcast.dto';
 
-// Keep multer typed loosely here to avoid adding extra dev dependencies for the demo project.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { diskStorage } = require('multer');
 
@@ -86,7 +86,6 @@ export class DashboardController {
           callback(new BadRequestException('Only image files are allowed.'), false);
           return;
         }
-
         callback(null, true);
       },
       limits: {
@@ -115,7 +114,6 @@ export class DashboardController {
           callback(new BadRequestException('Only image files are allowed.'), false);
           return;
         }
-
         callback(null, true);
       },
       limits: {
@@ -160,5 +158,31 @@ export class DashboardController {
     @Body() dto: { actorUserId: string; status: string },
   ) {
     return this.dashboardService.updateOrderStatus(orderId, dto.actorUserId, dto.status);
+  }
+
+  @Get('services/list-for-broadcast')
+  getServicesForSelect() {
+    return this.dashboardService.getRealServicesForSelect();
+  }
+
+  @Post('services/broadcast')
+  createBroadcastContent(
+    // @Body() dto: { 
+    //   serviceType: string; 
+    //   title: string; 
+    //   content: string; 
+    //   scheduledTime: string 
+    // },
+    @Body() dto: CreateBroadcastDto,
+  ) {
+    return this.dashboardService.createBroadcastContent(dto);
+  }
+
+  @Get('services/broadcast-history') 
+  getBroadcastHistory(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.dashboardService.getBroadcastHistory({ page, pageSize });
   }
 }

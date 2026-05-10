@@ -371,131 +371,133 @@
               </div>
             </section>
 
-            <section class="history-table-card home-card">
-              <div class="history-toolbar">
-                <div>
-                  <h3>Order records</h3>
-                  <p>
-                    Showing {{ paginatedOrders().length }} of {{ filteredOrders().length }} orders
-                  </p>
-                </div>
+           <section class="history-table-card home-card">
+  <div class="history-toolbar">
+    <div>
+      <h3>Order records</h3>
+      <p>
+        Showing {{ paginatedOrders().length }} of {{ filteredOrders().length }} orders
+      </p>
+    </div>
 
-                <div class="history-filter-tabs">
-                  <button
-                    type="button"
-                    [class.active]="historyStatusFilter() === 'ALL'"
-                    (click)="setHistoryFilter('ALL')"
-                  >
-                    All
-                  </button>
+    <div class="history-filter-tabs">
+      <button
+        type="button"
+        [class.active]="historyStatusFilter() === 'ALL'"
+        (click)="setHistoryFilter('ALL')"
+      >
+        All
+      </button>
 
-                  <button
-                    type="button"
-                    [class.active]="historyStatusFilter() === 'APPROVED'"
-                    (click)="setHistoryFilter('APPROVED')"
-                  >
-                    Approved
-                  </button>
+      <button
+        type="button"
+        [class.active]="historyStatusFilter() === 'APPROVED'"
+        (click)="setHistoryFilter('APPROVED')"
+      >
+        Approved
+      </button>
 
-                  <button
-                    type="button"
-                    [class.active]="historyStatusFilter() === 'PENDING'"
-                    (click)="setHistoryFilter('PENDING')"
-                  >
-                    Pending
-                  </button>
-                </div>
-              </div>
+      <button
+        type="button"
+        [class.active]="historyStatusFilter() === 'PENDING'"
+        (click)="setHistoryFilter('PENDING')"
+      >
+        Pending
+      </button>
+    </div>
+  </div>
 
-              @if (ordersLoading()) {
-                <p class="empty-state">Loading your history...</p>
+  @if (ordersLoading()) {
+    <p class="empty-state">Loading your history...</p>
+  } @else {
+    <div class="history-list">
+      @for (order of paginatedOrders(); track order.id) {
+        @let isDone = order.status?.toLowerCase() === 'approved' || order.status?.toLowerCase() === 'success';
+        
+        <article
+          class="history-record"
+          [class.approved]="isDone"
+          [class.pending]="!isDone"
+        >
+          <div class="history-record-main">
+            <div class="history-record-icon">
+              @if (isDone) {
+                <span>✓</span>
               } @else {
-                <div class="history-list">
-                  @for (order of paginatedOrders(); track order.id) {
-                    <article
-                      class="history-record"
-                      [class.approved]="order.status === 'APPROVED'"
-                      [class.pending]="order.status !== 'APPROVED'"
-                    >
-                      <div class="history-record-main">
-                        <div class="history-record-icon">
-                          @if (order.status === 'APPROVED') {
-                            <span>✓</span>
-                          } @else {
-                            <span>•</span>
-                          }
-                        </div>
-
-                        <div>
-                          <span class="order-ref">Mã đơn: {{ order.txnRef || 'N/A' }}</span>
-                          <h3>{{ order.serviceTitle || 'Dịch vụ không tên' }}</h3>
-                          <p>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
-                        </div>
-                      </div>
-
-                      <div class="history-record-amount">
-                        <strong>{{ order.amount || 0 | number }} VND</strong>
-                        <span
-                          class="order-status-badge"
-                          [class.approved]="order.status === 'APPROVED'"
-                          [class.pending]="order.status !== 'APPROVED'"
-                        >
-                          {{ order.status === 'APPROVED' ? 'Approved' : 'Pending' }}
-                        </span>
-                      </div>
-
-                      <div class="history-record-action">
-                        @if (order.status === 'APPROVED') {
-                          <span class="history-action-text approved">Completed</span>
-                        } @else {
-                          <span class="history-action-text pending">Processing</span>
-                        }
-                      </div>
-                    </article>
-                  } @empty {
-                    <div class="empty-history-card">
-                      <h3>No orders found</h3>
-                      <p>There are no subscription records matching this filter.</p>
-                    </div>
-                  }
-                </div>
-
-                @if (filteredOrders().length > historyPageSize) {
-                  <div class="history-pagination">
-                    <button
-                      type="button"
-                      class="history-page-button"
-                      [disabled]="historyPage() === 1"
-                      (click)="goToHistoryPage(historyPage() - 1)"
-                    >
-                      Previous
-                    </button>
-
-                    <div class="history-page-list">
-                      @for (page of historyPageNumbers(); track page) {
-                        <button
-                          type="button"
-                          class="history-page-number"
-                          [class.active]="page === historyPage()"
-                          (click)="goToHistoryPage(page)"
-                        >
-                          {{ page }}
-                        </button>
-                      }
-                    </div>
-
-                    <button
-                      type="button"
-                      class="history-page-button"
-                      [disabled]="historyPage() === totalHistoryPages()"
-                      (click)="goToHistoryPage(historyPage() + 1)"
-                    >
-                      Next
-                    </button>
-                  </div>
-                }
+                <span>•</span>
               }
-            </section>
+            </div>
+
+            <div>
+              <span class="order-ref">Mã đơn: {{ order.txnRef || order.orderCode || 'N/A' }}</span>
+              <h3>{{ order.serviceTitle || order.serviceName || 'Dịch vụ không tên' }}</h3>
+              <p>{{ (order.createdAt || order.registeredAt) | date: 'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+
+          <div class="history-record-amount">
+            <strong>{{ (order.amount || order.totalAmount || 0) | number }} VND</strong>
+            <span
+              class="order-status-badge"
+              [class.approved]="isDone"
+              [class.pending]="!isDone"
+            >
+              {{ isDone ? 'Approved' : 'Pending' }}
+            </span>
+          </div>
+
+          <div class="history-record-action">
+            @if (isDone) {
+              <span class="history-action-text approved">Completed</span>
+            } @else {
+              <span class="history-action-text pending">Processing</span>
+            }
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-history-card">
+          <h3>No orders found</h3>
+          <p>There are no subscription records matching this filter.</p>
+        </div>
+      }
+    </div>
+
+    @if (filteredOrders().length > historyPageSize) {
+      <div class="history-pagination">
+        <button
+          type="button"
+          class="history-page-button"
+          [disabled]="historyPage() === 1"
+          (click)="goToHistoryPage(historyPage() - 1)"
+        >
+          Previous
+        </button>
+
+        <div class="history-page-list">
+          @for (page of historyPageNumbers(); track page) {
+            <button
+              type="button"
+              class="history-page-number"
+              [class.active]="page === historyPage()"
+              (click)="goToHistoryPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="history-page-button"
+          [disabled]="historyPage() === totalHistoryPages()"
+          (click)="goToHistoryPage(historyPage() + 1)"
+        >
+          Next
+        </button>
+      </div>
+    }
+  }
+</section>
           </section>
         }
       }
