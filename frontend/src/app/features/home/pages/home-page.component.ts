@@ -1,4 +1,10 @@
 import { CommonModule } from '@angular/common';
+const ADMIN_INFO = {
+  id: '69e219439a52b345c0c82898',
+  email: 'admin@gmail.com',
+  displayName: 'Hệ thống (Admin)',
+  avatarUrl: '' 
+};
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
@@ -101,14 +107,31 @@ export class HomePageComponent implements OnInit {
     }),
   );
   protected readonly filteredFriends = computed(() => {
-    const query = this.friendsSearchQuery().trim().toLowerCase();
-    if (!query) {
-      return this.sortedFriends();
-    }
-    return this.sortedFriends().filter((friend) =>
-      friend.displayName.toLowerCase().includes(query),
-    );
-  });
+  const query = this.friendsSearchQuery().trim().toLowerCase();
+  const allFriends = this.sortedFriends(); 
+  
+  // Kiểm tra xem Admin đã có trong danh sách bạn bè thật chưa
+  const hasAdmin = allFriends.some(f => f.id === ADMIN_INFO.id);
+  let finalSideBarList = [...allFriends];
+
+  if (!hasAdmin) {
+
+    const adminAccount: any = {
+      ...ADMIN_INFO,
+      isOnline: true,
+      unreadCount: 0, 
+      lastMessage: 'Hỗ trợ dịch vụ...' 
+    };
+    finalSideBarList = [adminAccount, ...allFriends];
+  }
+
+  if (!query) return finalSideBarList;
+  
+  return finalSideBarList.filter(f => 
+    f.displayName.toLowerCase().includes(query) || f.email?.includes(query)
+  );
+});
+  
   protected readonly totalFriendsPages = computed(() =>
     Math.max(1, Math.ceil(this.filteredFriends().length / HomePageComponent.friendsPerPage)),
   );
@@ -228,7 +251,7 @@ export class HomePageComponent implements OnInit {
     const currentFriend = this.activeChatFriend();
     if (currentFriend?.id === friend.id) return;
 
-    this.activeGroup.set(null); // Đóng chat nhóm nếu đang mở
+    this.activeGroup.set(null);
     this.activeChatFriend.set(friend);
     this.chatMessages.set([]);
     this.chatError.set('');
@@ -513,11 +536,15 @@ export class HomePageComponent implements OnInit {
     });
   }
 
-  private loadConversation(friendUserId: string) {
+ private loadConversation(friendUserId: string) {
     const user = this.currentUser();
     if (!user) return;
+    
     this.chatLoading.set(true);
     this.chatError.set('');
+    
+    const ADMIN_ID = '69e219439a52b345c0c82898';
+
     this.chatApi.getConversation(user.id, friendUserId).subscribe({
       next: (response) => {
         this.chatMessages.set(response.messages);
@@ -525,11 +552,20 @@ export class HomePageComponent implements OnInit {
         this.markConversationRead(friendUserId);
       },
       error: (error: HttpErrorResponse) => {
-        this.chatError.set(error.error?.message ?? 'Unable to load this conversation right now.');
+        
+        if (friendUserId === ADMIN_ID) {
+
+            this.chatError.set(''); 
+            this.chatMessages.set([]); 
+        } else {
+
+            this.chatError.set(error.error?.message ?? 'Unable to load this conversation right now.');
+        }
+
         this.chatLoading.set(false);
       },
     });
-  }
+}
 
   private loadFriends(userId: string, showLoading = true) {
     if (showLoading) this.friendsLoading.set(true);
@@ -546,20 +582,17 @@ export class HomePageComponent implements OnInit {
     });
   }
 
-  // Thêm các signal này vào class
   protected readonly showCreateGroupModal = signal(false);
   protected readonly newGroupTitle = signal('');
   protected readonly selectedMemberIds = signal<string[]>([]);
   protected readonly isCreatingGroup = signal(false);
 
-  // Hàm mở dialog
   protected openCreateGroupDialog() {
     this.newGroupTitle.set('');
     this.selectedMemberIds.set([]);
     this.showCreateGroupModal.set(true);
   }
 
-  // Hàm đóng dialog
   protected closeCreateGroupDialog() {
     this.showCreateGroupModal.set(false);
   }
@@ -578,12 +611,11 @@ export class HomePageComponent implements OnInit {
     if (!currentUser) return;
 
     if (confirm('Bạn có chắc chắn muốn mời thành viên này ra khỏi nhóm?')) {
-      // Gọi đến chatApiService (không phải homeApi)
       this.chatApiService
         .kickGroupMember(event.conversationId, event.targetUserId, currentUser.id)
         .subscribe({
           next: () => {
-            this.loadGroups(); // Tải lại danh sách nhóm để cập nhật số lượng tv
+            this.loadGroups();
             alert('Đã mời thành viên ra khỏi nhóm.');
           },
           error: (err) => {
