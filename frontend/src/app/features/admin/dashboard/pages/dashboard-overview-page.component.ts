@@ -14,7 +14,7 @@ import { FriendsRealtimeService } from '../../../friends/services/friends-realti
   standalone: true,
   imports: [CommonModule],
   templateUrl: './dashboard-overview-page.component.html',
-  styleUrl: '../styles/dashboard-pages.css',
+  styleUrls: ['../styles/dashboard-pages.css', './dashboard-overview-page.component.css'],
 })
 export class DashboardOverviewPageComponent {
   private readonly dashboardApi = inject(AdminDashboardApiService);
@@ -36,8 +36,7 @@ export class DashboardOverviewPageComponent {
       .pipe(
         filter(
           (message) =>
-            message.event === 'presence-updated' ||
-            message.event === 'dashboard-overview-updated',
+            message.event === 'presence-updated' || message.event === 'dashboard-overview-updated',
         ),
         debounceTime(200),
         takeUntilDestroyed(this.destroyRef),

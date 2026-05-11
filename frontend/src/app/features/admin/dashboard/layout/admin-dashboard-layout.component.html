@@ -5,12 +5,17 @@
   primaryLinkRoute="/dashboard"
   secondaryLinkLabel="Home"
   secondaryLinkRoute="/"
-  profileRoute="/dashboard/profile"
+  profileRoute="/profile"
 >
   <section class="dashboard-shell">
     <aside class="dashboard-sidebar">
-      <p class="dashboard-sidebar-eyebrow">Management</p>
-      <h1>Control Panel</h1>
+      <div class="dashboard-sidebar-header">
+        <p class="dashboard-sidebar-eyebrow">Management</p>
+        <h1>Control Panel</h1>
+        <p class="dashboard-sidebar-copy">
+          Manage users, services, orders, and platform activity from one focused workspace.
+        </p>
+      </div>
 
       <nav class="dashboard-menu">
         @for (item of menuItems; track item.route) {
@@ -20,10 +25,19 @@
             [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
             class="dashboard-menu-item"
           >
-            {{ item.label }}
+            <span class="dashboard-menu-dot"></span>
+            <span>{{ item.label }}</span>
           </a>
         }
       </nav>
+
+      <div class="dashboard-sidebar-footer">
+        <span class="dashboard-status-dot"></span>
+        <div>
+          <strong>Admin workspace</strong>
+          <p>System tools are ready.</p>
+        </div>
+      </div>
     </aside>
 
     <section class="dashboard-content">

@@ -183,15 +183,32 @@
             }
           </div>
 
-          <a
-            [routerLink]="primaryLinkRoute()"
-            class="nav-text-link"
-            [class.active]="isActive(primaryLinkRoute())"
-          >
-            <span class="link-text">{{ primaryLinkLabel() }}</span>
-          </a>
+          @if (currentUser()?.role === 'admin' || currentUser()?.role === 'superadmin') {
+            <a
+              routerLink="/dashboard"
+              class="nav-text-link"
+              [class.active]="isActive('/dashboard')"
+            >
+              <span class="link-text">Dashboard</span>
+            </a>
+          }
 
-          @if (secondaryLinkLabel() && secondaryLinkRoute()) {
+          @if (primaryLinkRoute() !== '/dashboard') {
+            <a
+              [routerLink]="primaryLinkRoute()"
+              class="nav-text-link"
+              [class.active]="isActive(primaryLinkRoute())"
+            >
+              <span class="link-text">{{ primaryLinkLabel() }}</span>
+            </a>
+          }
+
+          @if (
+            secondaryLinkLabel() &&
+            secondaryLinkRoute() &&
+            secondaryLinkRoute() !== '/dashboard' &&
+            secondaryLinkRoute() !== primaryLinkRoute()
+          ) {
             <a
               [routerLink]="secondaryLinkRoute()"
               class="nav-text-link"

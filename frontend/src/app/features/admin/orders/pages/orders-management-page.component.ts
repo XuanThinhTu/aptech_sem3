@@ -18,7 +18,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './orders-management-page.component.html',
-  styleUrl: '../../dashboard/styles/dashboard-pages.css',
+  styleUrl: './orders-management-page.component.css',
 })
 export class OrdersManagementPageComponent {
   private readonly dashboardApi = inject(AdminDashboardApiService);
@@ -74,11 +74,7 @@ export class OrdersManagementPageComponent {
 
   constructor() {
     this.searchTerms
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.currentPage.set(1);
         this.loadOrders();
@@ -167,67 +163,61 @@ export class OrdersManagementPageComponent {
     this.submitStatusUpdate(order, 'cancelled');
   }
 
-private submitStatusUpdate(order: DashboardOrderItem, nextStatus: DashboardOrderStatus) {
-  const currentUser = this.currentUser();
-  if (!currentUser || this.isUpdatingStatus()) {
-    return;
-  }
+  private submitStatusUpdate(order: DashboardOrderItem, nextStatus: DashboardOrderStatus) {
+    const currentUser = this.currentUser();
+    if (!currentUser || this.isUpdatingStatus()) {
+      return;
+    }
 
-  this.isUpdatingStatus.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    this.isUpdatingStatus.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
-  this.dashboardApi.updateOrderStatus(order.id, currentUser.id, nextStatus).subscribe({
-    next: (response) => {
-    
-      this.successMessage.set(response.message);
-      this.isUpdatingStatus.set(false);
-      
-      if (this.orderPreview()?.id === order.id) {
-        this.orderPreview.update((current) =>
-          current ? { ...current, orderStatus: nextStatus } : current,
-        );
-      }
-      this.loadOrders();
-    },
-    error: (error: HttpErrorResponse) => {
-
-      this.errorMessage.set(  
-        error.error?.message ?? 'Unable to update this order right now.',
-      );
-      this.isUpdatingStatus.set(false);
-    },
-  });
-}
-  private loadOrders() {
-  this.isLoading.set(true);
-
-  this.dashboardApi
-    .getOrders({
-      page: this.currentPage(),
-      pageSize: this.pageSize,
-      search: this.currentSearchValue().trim(),
-      status: this.activeTab(),
-    })
-    .subscribe({
+    this.dashboardApi.updateOrderStatus(order.id, currentUser.id, nextStatus).subscribe({
       next: (response) => {
-        this.orders.set(response.items);
-        this.pagination.set(response.pagination);
-        this.isLoading.set(false);
+        this.successMessage.set(response.message);
+        this.isUpdatingStatus.set(false);
+
+        if (this.orderPreview()?.id === order.id) {
+          this.orderPreview.update((current) =>
+            current ? { ...current, orderStatus: nextStatus } : current,
+          );
+        }
+        this.loadOrders();
       },
       error: (error: HttpErrorResponse) => {
-        this.errorMessage.set(
-          error.error?.message ?? 'Unable to load orders right now.',
-        );
-        this.orders.set([]);
-        this.pagination.set({
-          page: 1,
-          pageSize: this.pageSize,
-          totalItems: 0,
-          totalPages: 1,
-        });
-        this.isLoading.set(false);
+        this.errorMessage.set(error.error?.message ?? 'Unable to update this order right now.');
+        this.isUpdatingStatus.set(false);
       },
     });
-}
+  }
+  private loadOrders() {
+    this.isLoading.set(true);
+
+    this.dashboardApi
+      .getOrders({
+        page: this.currentPage(),
+        pageSize: this.pageSize,
+        search: this.currentSearchValue().trim(),
+        status: this.activeTab(),
+      })
+      .subscribe({
+        next: (response) => {
+          this.orders.set(response.items);
+          this.pagination.set(response.pagination);
+          this.isLoading.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorMessage.set(error.error?.message ?? 'Unable to load orders right now.');
+          this.orders.set([]);
+          this.pagination.set({
+            page: 1,
+            pageSize: this.pageSize,
+            totalItems: 0,
+            totalPages: 1,
+          });
+          this.isLoading.set(false);
+        },
+      });
+  }
 }

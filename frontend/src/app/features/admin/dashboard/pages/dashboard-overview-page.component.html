@@ -1,21 +1,46 @@
-<section class="dashboard-page">
-  <div class="dashboard-page-heading">
-    <p class="dashboard-page-eyebrow">Dashboard</p>
-    <h2>Management Home</h2>
-  </div>
-
+<section class="dashboard-page overview-page">
   @if (isLoading()) {
-    <article class="dashboard-table-card">
+    <article class="overview-state-card">
+      <div class="overview-loader"></div>
       <p>Loading dashboard overview...</p>
     </article>
   } @else if (errorMessage()) {
-    <article class="dashboard-table-card">
+    <article class="overview-state-card error">
+      <div class="overview-state-icon">!</div>
       <p>{{ errorMessage() }}</p>
     </article>
   } @else if (overview(); as data) {
-    <div class="dashboard-card-grid">
-      <article class="dashboard-card stat-card">
-        <div class="stat-card-header">
+    <section class="overview-command-center">
+      <div class="overview-title-block">
+        <p class="dashboard-page-eyebrow">Dashboard</p>
+        <h2>Management Home</h2>
+        <p>
+          Monitor platform activity, services, user status, and revenue signals from one focused
+          view.
+        </p>
+      </div>
+
+      <div class="overview-summary-grid">
+        <article class="summary-tile revenue">
+          <span>Total revenue</span>
+          <strong>{{ formatCurrency(data.orders.totalRevenue) }}</strong>
+        </article>
+
+        <article class="summary-tile">
+          <span>Online rate</span>
+          <strong>{{ data.accounts.onlineRate }}%</strong>
+        </article>
+
+        <article class="summary-tile">
+          <span>Active services</span>
+          <strong>{{ data.services.active }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="overview-kpi-grid">
+      <article class="overview-kpi-card">
+        <div class="kpi-topline">
           <div>
             <p class="dashboard-card-title">Accounts</p>
             <h3>{{ data.accounts.total }}</h3>
@@ -23,24 +48,25 @@
           <span class="stat-pill">{{ data.accounts.onlineRate }}% online</span>
         </div>
 
-        <div class="stat-list">
+        <div class="mini-progress">
+          <span [style.width.%]="data.accounts.onlineRate"></span>
+        </div>
+
+        <div class="kpi-detail-grid">
           <div>
-            <span>Created accounts</span>
-            <strong>{{ data.accounts.total }}</strong>
-          </div>
-          <div>
-            <span>Online now</span>
+            <span>Online</span>
             <strong class="positive">{{ data.accounts.online }}</strong>
           </div>
+
           <div>
-            <span>Offline now</span>
+            <span>Offline</span>
             <strong>{{ data.accounts.offline }}</strong>
           </div>
         </div>
       </article>
 
-      <article class="dashboard-card stat-card">
-        <div class="stat-card-header">
+      <article class="overview-kpi-card">
+        <div class="kpi-topline">
           <div>
             <p class="dashboard-card-title">Services</p>
             <h3>{{ data.services.active }}</h3>
@@ -48,57 +74,60 @@
           <span class="stat-pill">{{ data.services.activeRate }}% active</span>
         </div>
 
-        <div class="stat-list">
+        <div class="mini-progress">
+          <span [style.width.%]="data.services.activeRate"></span>
+        </div>
+
+        <div class="kpi-detail-grid">
           <div>
-            <span>Active services</span>
-            <strong class="positive">{{ data.services.active }}</strong>
-          </div>
-          <div>
-            <span>Inactive services</span>
+            <span>Inactive</span>
             <strong>{{ data.services.inactive }}</strong>
           </div>
+
           <div>
-            <span>User subscriptions</span>
+            <span>Subscriptions</span>
             <strong
-              >{{ data.services.activeSubscriptions }} active / {{
+              >{{ data.services.activeSubscriptions }}/{{
                 data.services.totalSubscriptions
-              }} total</strong
+              }}</strong
             >
           </div>
         </div>
       </article>
 
-      <article class="dashboard-card stat-card">
-        <div class="stat-card-header">
+      <article class="overview-kpi-card">
+        <div class="kpi-topline">
           <div>
             <p class="dashboard-card-title">Orders</p>
             <h3>{{ data.orders.total }}</h3>
           </div>
-          <span class="stat-pill">{{ formatCurrency(data.orders.totalRevenue) }}</span>
+          <span class="stat-pill revenue-pill">{{ formatCurrency(data.orders.totalRevenue) }}</span>
         </div>
 
-        <div class="stat-list">
+        <div class="kpi-detail-grid three">
           <div>
             <span>Pending</span>
             <strong>{{ data.orders.pending }}</strong>
           </div>
+
           <div>
             <span>Approved</span>
             <strong class="positive">{{ data.orders.approved }}</strong>
           </div>
+
           <div>
             <span>Cancelled</span>
             <strong>{{ data.orders.cancelled }}</strong>
           </div>
         </div>
       </article>
-    </div>
+    </section>
 
-    <div class="dashboard-detail-grid">
-      <article class="dashboard-table-card revenue-card">
-        <div class="dashboard-section-header">
+    <section class="overview-main-grid">
+      <article class="overview-panel revenue-panel">
+        <div class="overview-panel-header">
           <div>
-            <p class="dashboard-card-title">Revenue</p>
+            <p class="dashboard-card-title">Revenue Analytics</p>
             <h3>Last 7 days</h3>
           </div>
           <span class="chart-total">{{ formatCurrency(data.orders.totalRevenue) }}</span>
@@ -121,38 +150,47 @@
         </div>
       </article>
 
-      <article class="dashboard-table-card order-status-card">
-        <div class="dashboard-section-header">
-          <div>
-            <p class="dashboard-card-title">Order Status</p>
-            <h3>Current payment-based states</h3>
+      <aside class="overview-side-panel">
+        <article class="overview-panel order-status-panel">
+          <div class="overview-panel-header compact">
+            <div>
+              <p class="dashboard-card-title">Order Status</p>
+              <h3>Current states</h3>
+            </div>
           </div>
-        </div>
 
-        <div class="stat-list order-status-list">
-          <div>
-            <span>Pending</span>
-            <strong>{{ data.orders.pending }}</strong>
-          </div>
-          <div>
-            <span>Approved</span>
-            <strong class="positive">{{ data.orders.approved }}</strong>
-          </div>
-          <div>
-            <span>Completed</span>
-            <strong class="positive">{{ data.orders.completed }}</strong>
-          </div>
-          <div>
-            <span>Cancelled</span>
-            <strong>{{ data.orders.cancelled }}</strong>
-          </div>
-        </div>
+          <div class="status-list">
+            <div class="status-row pending">
+              <span>Pending</span>
+              <strong>{{ data.orders.pending }}</strong>
+            </div>
 
-        <p class="dashboard-note">
-          These states currently follow payment records and can be expanded when your custom order
-          workflow is added.
-        </p>
-      </article>
-    </div>
+            <div class="status-row approved">
+              <span>Approved</span>
+              <strong>{{ data.orders.approved }}</strong>
+            </div>
+
+            <div class="status-row completed">
+              <span>Completed</span>
+              <strong>{{ data.orders.completed }}</strong>
+            </div>
+
+            <div class="status-row cancelled">
+              <span>Cancelled</span>
+              <strong>{{ data.orders.cancelled }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="overview-note-panel">
+          <p class="dashboard-card-title">System Note</p>
+          <h3>Workflow reminder</h3>
+          <p>
+            These states currently follow payment records and can be expanded when your custom order
+            workflow is added.
+          </p>
+        </article>
+      </aside>
+    </section>
   }
 </section>

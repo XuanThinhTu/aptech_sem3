@@ -17,7 +17,10 @@ import { AuthStateService } from '../../../../core/services/auth-state.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './account-management-page.component.html',
-  styleUrl: '../../dashboard/styles/dashboard-pages.css',
+  styleUrls: [
+    '../../dashboard/styles/dashboard-pages.css',
+    './account-management-page.component.css',
+  ],
 })
 export class AccountManagementPageComponent {
   private readonly dashboardApi = inject(AdminDashboardApiService);
@@ -26,9 +29,7 @@ export class AccountManagementPageComponent {
   private readonly searchTerms = new Subject<string>();
 
   protected readonly currentUser = this.authState.currentUser;
-  protected readonly canCreateAdmin = computed(
-    () => this.currentUser()?.role === 'superadmin',
-  );
+  protected readonly canCreateAdmin = computed(() => this.currentUser()?.role === 'superadmin');
   protected readonly accounts = signal<DashboardAccountItem[]>([]);
   protected readonly isLoading = signal(true);
   protected readonly errorMessage = signal('');
@@ -73,11 +74,7 @@ export class AccountManagementPageComponent {
 
   constructor() {
     this.searchTerms
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.currentPage.set(1);
         this.loadAccounts();
@@ -144,10 +141,7 @@ export class AccountManagementPageComponent {
     this.isCreatingAdmin.set(false);
   }
 
-  protected updateAddAdminField(
-    field: 'username' | 'email' | 'mobileNumber',
-    value: string,
-  ) {
+  protected updateAddAdminField(field: 'username' | 'email' | 'mobileNumber', value: string) {
     this.addAdminForm.update((current) => ({
       ...current,
       [field]: value,
@@ -188,9 +182,7 @@ export class AccountManagementPageComponent {
         this.loadAccounts();
       },
       error: (error: HttpErrorResponse) => {
-        this.errorMessage.set(
-          error.error?.message ?? 'Unable to create admin account right now.',
-        );
+        this.errorMessage.set(error.error?.message ?? 'Unable to create admin account right now.');
         this.isCreatingAdmin.set(false);
       },
     });
@@ -217,9 +209,7 @@ export class AccountManagementPageComponent {
           this.isLoading.set(false);
         },
         error: (error: HttpErrorResponse) => {
-          this.errorMessage.set(
-            error.error?.message ?? 'Unable to load accounts right now.',
-          );
+          this.errorMessage.set(error.error?.message ?? 'Unable to load accounts right now.');
           this.isLoading.set(false);
         },
       });

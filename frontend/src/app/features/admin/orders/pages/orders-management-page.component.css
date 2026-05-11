@@ -1,0 +1,1070 @@
+:host {
+  display: block;
+}
+
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   ORDERS PAGE — CLEAN, NO DASHBOARD-PAGES DEPENDENCY
+========================================================= */
+
+.orders-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+
+/* =========================
+   HERO
+========================= */
+
+.orders-hero {
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+  border-radius: 28px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  gap: 22px;
+  align-items: center;
+
+  background: #1e3932;
+  color: #ffffff;
+  overflow: hidden;
+
+  box-shadow:
+    0 0 0.5px rgba(0, 0, 0, 0.14),
+    0 18px 42px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-page-eyebrow {
+  margin: 0 0 10px;
+  color: #cba258;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.orders-hero h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1.02;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+}
+
+.orders-hero p:not(.dashboard-page-eyebrow) {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.orders-hero-metrics {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.orders-hero-metrics div {
+  min-width: 0;
+  padding: 15px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.orders-hero-metrics span {
+  display: block;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 10.5px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.orders-hero-metrics strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1.08;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+/* =========================
+   MAIN CARD
+========================= */
+
+.orders-table-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  padding: 22px;
+  border-radius: 28px;
+  background: #ffffff;
+  overflow: visible;
+
+  box-shadow:
+    0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 14px 34px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+.orders-control-bar {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 18px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 14px;
+  align-items: end;
+}
+
+.orders-tab-row {
+  min-width: 0;
+  max-width: 100%;
+  padding: 7px;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+
+  border-radius: 999px;
+  background: #f2f0eb;
+}
+
+.orders-tab-button {
+  min-height: 40px;
+  padding: 0 15px;
+
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+
+  color: rgba(0, 0, 0, 0.58);
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.orders-tab-button:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.orders-tab-button.active {
+  background: #1e3932;
+  color: #ffffff;
+}
+
+.orders-tab-button:active {
+  transform: scale(0.96);
+}
+
+.orders-search-field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.orders-search-field span {
+  color: rgba(0, 0, 0, 0.66);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.orders-search-field input {
+  width: 100%;
+  min-width: 0;
+  height: 50px;
+  padding: 0 15px;
+
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 16px;
+
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.88);
+
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.orders-search-field input:hover {
+  border-color: rgba(0, 117, 74, 0.34);
+}
+
+.orders-search-field input:focus {
+  border-color: #00754a;
+  background: rgba(212, 233, 226, 0.18);
+  box-shadow: 0 0 0 4px rgba(0, 117, 74, 0.12);
+}
+
+/* =========================
+   FEEDBACK / STATES
+========================= */
+
+.orders-feedback {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+
+  border-radius: 16px;
+  background: #d4e9e2;
+  color: #006241;
+
+  font-weight: 800;
+}
+
+.orders-state-card {
+  min-height: 180px;
+  padding: 28px;
+
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+
+  border-radius: 22px;
+  background: #f7f2ea;
+  text-align: center;
+}
+
+.orders-state-card p {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.58);
+  font-weight: 750;
+}
+
+.orders-state-card.error {
+  background: rgba(200, 32, 20, 0.06);
+}
+
+.orders-state-icon {
+  width: 52px;
+  height: 52px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+  background: #d4e9e2;
+  color: #006241;
+
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.orders-state-card.error .orders-state-icon {
+  background: rgba(200, 32, 20, 0.1);
+  color: #c82014;
+}
+
+.orders-loader {
+  width: 44px;
+  height: 44px;
+
+  border-radius: 50%;
+  border: 4px solid rgba(0, 117, 74, 0.14);
+  border-top-color: #00754a;
+
+  animation: ordersSpin 0.85s linear infinite;
+}
+
+@keyframes ordersSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   TABLE — NO HORIZONTAL SCROLL
+========================= */
+
+.orders-table-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  overflow-x: hidden;
+  overflow-y: visible;
+
+  border-radius: 22px;
+  background: transparent;
+}
+
+.orders-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+/* Better proportions after Workflow becomes dropdown */
+.orders-table th:nth-child(1),
+.orders-table td:nth-child(1) {
+  width: 18%;
+}
+
+.orders-table th:nth-child(2),
+.orders-table td:nth-child(2) {
+  width: 18%;
+}
+
+.orders-table th:nth-child(3),
+.orders-table td:nth-child(3) {
+  width: 14%;
+}
+
+.orders-table th:nth-child(4),
+.orders-table td:nth-child(4) {
+  width: 11%;
+}
+
+.orders-table th:nth-child(5),
+.orders-table td:nth-child(5) {
+  width: 12%;
+}
+
+.orders-table th:nth-child(6),
+.orders-table td:nth-child(6) {
+  width: 16%;
+}
+
+.orders-table th:nth-child(7),
+.orders-table td:nth-child(7) {
+  width: 11%;
+}
+
+.orders-table thead th {
+  padding: 0 9px 6px;
+
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.orders-table tbody tr {
+  background: #f7f2ea;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.orders-table tbody tr:hover {
+  transform: translateY(-1px);
+  background: #f2f0eb;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+}
+
+.orders-table tbody td {
+  padding: 13px 9px;
+
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 12.5px;
+  line-height: 1.35;
+  vertical-align: middle;
+
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.orders-table tbody td:first-child {
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 18px;
+}
+
+.orders-table tbody td:last-child {
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+}
+
+/* =========================
+   TABLE CONTENT
+========================= */
+
+.order-code-cell {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.order-code-cell strong {
+  color: rgba(0, 0, 0, 0.9);
+  font-size: 12.5px;
+  line-height: 1.28;
+  font-weight: 950;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.order-status-pill {
+  width: fit-content;
+  min-height: 25px;
+  padding: 0 9px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  background: #f2f0eb;
+  color: rgba(0, 0, 0, 0.64);
+
+  font-size: 10.5px;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.order-status-pill.pending {
+  background: #fff8e8;
+  color: #b47700;
+}
+
+.order-status-pill.approved,
+.order-status-pill.completed {
+  background: #d4e9e2;
+  color: #006241;
+}
+
+.order-status-pill.cancelled,
+.order-status-pill.canceled {
+  background: rgba(200, 32, 20, 0.08);
+  color: #c82014;
+}
+
+.orders-service-name {
+  display: block;
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 850;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.orders-muted-text,
+.orders-date {
+  color: rgba(0, 0, 0, 0.56);
+  font-size: 12.5px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.orders-amount {
+  display: inline-block;
+  color: #8b3f20;
+  font-size: 12.5px;
+  font-weight: 950;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* =========================
+   WORKFLOW DROPDOWN
+========================= */
+
+.workflow-cell {
+  position: relative;
+  overflow: visible;
+  text-align: right;
+}
+
+.orders-workflow-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.orders-workflow-menu summary {
+  min-height: 34px;
+  padding: 0 12px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border-radius: 999px;
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.72);
+
+  font-size: 12px;
+  font-weight: 900;
+  list-style: none;
+  cursor: pointer;
+
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.orders-workflow-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.orders-workflow-menu summary:hover {
+  transform: translateY(-1px);
+  background: #f2f0eb;
+}
+
+.orders-workflow-menu[open] summary {
+  background: #1e3932;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.orders-workflow-menu[open] summary span {
+  transform: rotate(180deg);
+}
+
+.orders-workflow-menu summary span {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.orders-workflow-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+
+  width: 172px;
+  padding: 8px;
+
+  display: grid;
+  gap: 6px;
+
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+
+  box-shadow:
+    0 0 0.5px rgba(0, 0, 0, 0.14),
+    0 16px 36px rgba(0, 0, 0, 0.16);
+
+  animation: workflowDropdownIn 0.16s ease both;
+}
+
+@keyframes workflowDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.orders-action-button {
+  min-height: 36px;
+  width: 100%;
+  padding: 0 12px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: transparent;
+  color: rgba(0, 0, 0, 0.72);
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.orders-action-button:hover:not(:disabled) {
+  background: #f2f0eb;
+  transform: translateX(1px);
+}
+
+.orders-action-button.primary {
+  color: #006241;
+}
+
+.orders-action-button.primary:hover:not(:disabled) {
+  background: #d4e9e2;
+}
+
+.orders-action-button.danger {
+  color: #9b2d28;
+}
+
+.orders-action-button.danger:hover:not(:disabled) {
+  background: rgba(200, 32, 20, 0.08);
+  color: #c82014;
+}
+
+.orders-action-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.orders-action-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+
+.orders-pagination {
+  margin-top: 18px;
+  padding-top: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.orders-pagination p {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.56);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pagination-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orders-page-button {
+  min-height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.7);
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.orders-page-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(0, 117, 74, 0.28);
+}
+
+.orders-page-button.active {
+  background: #00754a;
+  color: #ffffff;
+  border-color: #00754a;
+}
+
+.orders-page-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.orders-page-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================
+   DIALOG
+========================= */
+
+.orders-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+  padding: 24px;
+
+  background: rgba(30, 57, 50, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.orders-dialog {
+  width: min(100%, 620px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+
+  padding: 24px;
+  border-radius: 28px;
+  background: #ffffff;
+
+  display: grid;
+  gap: 20px;
+
+  box-shadow:
+    0 0 0.5px rgba(0, 0, 0, 0.14),
+    0 28px 70px rgba(0, 0, 0, 0.24);
+}
+
+.orders-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.orders-dialog-header h3 {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.9);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.dialog-status {
+  margin-top: 10px;
+}
+
+.orders-dialog-close {
+  width: 40px;
+  height: 40px;
+
+  border: 0;
+  border-radius: 50%;
+  background: #f2f0eb;
+
+  color: #8b3f20;
+  font-size: 24px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.orders-dialog-close:hover {
+  transform: translateY(-1px);
+  background: #f7e2d8;
+}
+
+.orders-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.orders-preview-grid div {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f7f2ea;
+}
+
+.orders-preview-grid span {
+  display: block;
+  margin-bottom: 6px;
+
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.orders-preview-grid strong {
+  color: rgba(0, 0, 0, 0.88);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.orders-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.table-capitalize {
+  text-transform: capitalize;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1180px) {
+  .orders-hero,
+  .orders-control-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .orders-control-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-table,
+  .orders-table thead,
+  .orders-table tbody,
+  .orders-table tr,
+  .orders-table th,
+  .orders-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .orders-table thead {
+    display: none;
+  }
+
+  .orders-table tbody tr {
+    padding: 14px;
+    border-radius: 20px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .orders-table tbody td {
+    padding: 0;
+    border: 0;
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .orders-table tbody td::before {
+    color: rgba(0, 0, 0, 0.48);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .orders-table tbody td:nth-child(1)::before {
+    content: 'Order';
+  }
+
+  .orders-table tbody td:nth-child(2)::before {
+    content: 'Service';
+  }
+
+  .orders-table tbody td:nth-child(3)::before {
+    content: 'Account';
+  }
+
+  .orders-table tbody td:nth-child(4)::before {
+    content: 'Phone';
+  }
+
+  .orders-table tbody td:nth-child(5)::before {
+    content: 'Total';
+  }
+
+  .orders-table tbody td:nth-child(6)::before {
+    content: 'Registered';
+  }
+
+  .orders-table tbody td:nth-child(7)::before {
+    content: 'Workflow';
+  }
+
+  .workflow-cell {
+    text-align: left;
+  }
+
+  .orders-workflow-dropdown {
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .orders-hero,
+  .orders-table-card,
+  .orders-dialog {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .orders-hero-metrics,
+  .orders-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-tab-row {
+    border-radius: 22px;
+  }
+
+  .orders-tab-button {
+    flex: 1 1 calc(50% - 7px);
+  }
+
+  .orders-pagination,
+  .orders-dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .orders-page-button {
+    width: 100%;
+  }
+
+  .pagination-actions {
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   FIX WORKFLOW DROPDOWN STACKING ISSUE
+   Prevent lower rows/buttons from cutting through open menu.
+========================================================= */
+
+/* Make the table create a controlled stacking context */
+.orders-table-shell {
+  position: relative;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  isolation: isolate;
+}
+
+/* Table/card must allow dropdown to float visually */
+.orders-table-card {
+  overflow: visible !important;
+}
+
+.orders-table {
+  position: relative;
+}
+
+/* Every row gets a baseline layer */
+.orders-table tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover row should not cover opened dropdowns from rows above */
+.orders-table tbody tr:hover {
+  z-index: 2;
+}
+
+/* Row that contains an open dropdown becomes top priority */
+.orders-table tbody tr:has(.orders-workflow-menu[open]) {
+  z-index: 100;
+}
+
+/* Allow cell content to escape row boundaries */
+.orders-table tbody td,
+.workflow-cell {
+  overflow: visible !important;
+}
+
+/* Dropdown container */
+.orders-workflow-menu {
+  position: relative;
+  z-index: 5;
+}
+
+/* Open menu must sit above all table rows */
+.orders-workflow-menu[open] {
+  z-index: 200;
+}
+
+/* Dropdown panel layer */
+.orders-workflow-dropdown {
+  z-index: 999;
+  pointer-events: auto;
+}
+
+/* Prevent action buttons in lower rows from visually bleeding through */
+.orders-table tbody tr:not(:has(.orders-workflow-menu[open])) .orders-workflow-menu {
+  z-index: 1;
+}
+
+/* Optional: make open button look active and solid */
+.orders-workflow-menu[open] summary {
+  position: relative;
+  z-index: 1000;
+  background: #1e3932;
+  color: #ffffff;
+}
+
+/* Stronger dropdown surface to cover anything behind */
+.orders-workflow-dropdown {
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+/* Avoid row hover transform creating weird overlay while menu is open */
+.orders-table tbody tr:has(.orders-workflow-menu[open]):hover {
+  transform: none;
+}

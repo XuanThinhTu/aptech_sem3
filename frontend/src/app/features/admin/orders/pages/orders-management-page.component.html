@@ -1,26 +1,47 @@
-<section class="dashboard-page">
-  <div class="dashboard-page-heading">
-    <p class="dashboard-page-eyebrow">Order</p>
-    <h2>Order Management</h2>
-    <p>Track subscription orders by status, search by order code, and update the workflow.</p>
-  </div>
-
-  <article class="dashboard-table-card">
-    <div class="dashboard-tab-row">
-      @for (tab of tabs; track tab.key) {
-        <button
-          type="button"
-          class="dashboard-tab-button"
-          [class.active]="tab.key === activeTab()"
-          (click)="switchTab(tab.key)"
-        >
-          {{ tab.label }}
-        </button>
-      }
+<section class="dashboard-page orders-page">
+  <section class="orders-hero">
+    <div>
+      <p class="dashboard-page-eyebrow">Order Center</p>
+      <h2>Order Management</h2>
+      <p>
+        Track subscription orders by status, search by order code, and update each workflow step.
+      </p>
     </div>
 
-    <div class="dashboard-toolbar single-search">
-      <label class="dashboard-search-field">
+    <div class="orders-hero-metrics">
+      <div>
+        <span>Total orders</span>
+        <strong>{{ pagination().totalItems }}</strong>
+      </div>
+
+      <div>
+        <span>Current page</span>
+        <strong>{{ pagination().page }}/{{ pagination().totalPages }}</strong>
+      </div>
+
+      <div>
+        <span>Visible records</span>
+        <strong>{{ orders().length }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <article class="dashboard-table-card orders-table-card">
+    <div class="orders-control-bar">
+      <div class="dashboard-tab-row orders-tab-row">
+        @for (tab of tabs; track tab.key) {
+          <button
+            type="button"
+            class="dashboard-tab-button orders-tab-button"
+            [class.active]="tab.key === activeTab()"
+            (click)="switchTab(tab.key)"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      <label class="dashboard-search-field orders-search-field">
         <span>Search</span>
         <input
           type="search"
@@ -32,70 +53,112 @@
     </div>
 
     @if (successMessage()) {
-      <p class="dashboard-feedback success">{{ successMessage() }}</p>
+      <p class="dashboard-feedback success orders-feedback">{{ successMessage() }}</p>
     }
 
     @if (isLoading()) {
-      <p class="dashboard-empty-state">Loading orders...</p>
+      <div class="orders-state-card">
+        <div class="orders-loader"></div>
+        <p>Loading orders...</p>
+      </div>
     } @else if (errorMessage()) {
-      <p class="dashboard-empty-state">{{ errorMessage() }}</p>
+      <div class="orders-state-card error">
+        <div class="orders-state-icon">!</div>
+        <p>{{ errorMessage() }}</p>
+      </div>
     } @else if (!orders().length) {
-      <p class="dashboard-empty-state">No orders matched this status or search keyword.</p>
+      <div class="orders-state-card">
+        <div class="orders-state-icon">⌕</div>
+        <p>No orders matched this status or search keyword.</p>
+      </div>
     } @else {
-      <div class="dashboard-table-shell">
-        <table class="dashboard-table">
+      <div class="dashboard-table-shell orders-table-shell">
+        <table class="dashboard-table orders-table">
           <thead>
             <tr>
-              <th>Order Code</th>
+              <th>Order</th>
               <th>Service</th>
               <th>Account</th>
               <th>Phone</th>
               <th>Total</th>
-              <th>Registered Date</th>
-              <th>Action</th>
+              <th>Registered</th>
+              <th>Workflow</th>
             </tr>
           </thead>
+
           <tbody>
             @for (order of orders(); track trackByOrder($index, order)) {
               <tr>
-                <td><strong>{{ order.orderCode }}</strong></td>
-                <td class="table-description">{{ order.serviceName }}</td>
-                <td>{{ order.accountName }}</td>
-                <td>{{ order.mobileNumber }}</td>
-                <td>{{ formatCurrency(order.totalAmount) }}</td>
-                <td>{{ order.registeredAt ? (order.registeredAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
                 <td>
-                  <div class="table-actions">
-                    <button
-                      type="button"
-                      class="table-action-button"
-                      (click)="openOrderPreview(order)"
-                    >
-                      View
-                    </button>
-
-                    @if (order.orderStatus === 'pending' || order.orderStatus === 'approved') {
-                      <button
-                        type="button"
-                        class="table-action-button"
-                        [disabled]="isUpdatingStatus()"
-                        (click)="updateStatus(order)"
-                      >
-                        {{ getPrimaryActionLabel(order.orderStatus) }}
-                      </button>
-                    }
-
-                    @if (order.orderStatus === 'pending') {
-                      <button
-                        type="button"
-                        class="table-action-button danger"
-                        [disabled]="isUpdatingStatus()"
-                        (click)="cancelOrder(order)"
-                      >
-                        Cancel
-                      </button>
-                    }
+                  <div class="order-code-cell">
+                    <strong>{{ order.orderCode }}</strong>
+                    <span class="order-status-pill" [class]="order.orderStatus">
+                      {{ order.orderStatus }}
+                    </span>
                   </div>
+                </td>
+
+                <td>
+                  <span class="orders-service-name">{{ order.serviceName }}</span>
+                </td>
+
+                <td>
+                  <span class="orders-muted-text">{{ order.accountName }}</span>
+                </td>
+
+                <td>
+                  <span class="orders-muted-text">{{ order.mobileNumber }}</span>
+                </td>
+
+                <td>
+                  <strong class="orders-amount">{{ formatCurrency(order.totalAmount) }}</strong>
+                </td>
+
+                <td>
+                  <span class="orders-date">
+                    {{ order.registeredAt ? (order.registeredAt | date: 'dd/MM/yyyy HH:mm') : '-' }}
+                  </span>
+                </td>
+
+                <td class="workflow-cell">
+                  <details class="orders-workflow-menu">
+                    <summary>
+                      Actions
+                      <span aria-hidden="true">⌄</span>
+                    </summary>
+
+                    <div class="orders-workflow-dropdown">
+                      <button
+                        type="button"
+                        class="orders-action-button"
+                        (click)="openOrderPreview(order)"
+                      >
+                        View order
+                      </button>
+
+                      @if (order.orderStatus === 'pending' || order.orderStatus === 'approved') {
+                        <button
+                          type="button"
+                          class="orders-action-button primary"
+                          [disabled]="isUpdatingStatus()"
+                          (click)="updateStatus(order)"
+                        >
+                          {{ getPrimaryActionLabel(order.orderStatus) }}
+                        </button>
+                      }
+
+                      @if (order.orderStatus === 'pending') {
+                        <button
+                          type="button"
+                          class="orders-action-button danger"
+                          [disabled]="isUpdatingStatus()"
+                          (click)="cancelOrder(order)"
+                        >
+                          Cancel order
+                        </button>
+                      }
+                    </div>
+                  </details>
                 </td>
               </tr>
             }
@@ -103,7 +166,7 @@
         </table>
       </div>
 
-      <div class="dashboard-pagination">
+      <div class="dashboard-pagination orders-pagination">
         <p>
           Showing page {{ pagination().page }} of {{ pagination().totalPages }} ·
           {{ pagination().totalItems }} orders
@@ -112,7 +175,7 @@
         <div class="pagination-actions">
           <button
             type="button"
-            class="pagination-button"
+            class="pagination-button orders-page-button"
             [disabled]="currentPage() === 1"
             (click)="goToPage(currentPage() - 1)"
           >
@@ -122,7 +185,7 @@
           @for (page of pageNumbers(); track page) {
             <button
               type="button"
-              class="pagination-button"
+              class="pagination-button orders-page-button"
               [class.active]="page === currentPage()"
               (click)="goToPage(page)"
             >
@@ -132,7 +195,7 @@
 
           <button
             type="button"
-            class="pagination-button"
+            class="pagination-button orders-page-button"
             [disabled]="currentPage() === pagination().totalPages"
             (click)="goToPage(currentPage() + 1)"
           >
@@ -144,47 +207,66 @@
   </article>
 
   @if (orderPreview(); as order) {
-    <div class="dashboard-dialog-backdrop" (click)="closeOrderPreview()">
-      <div class="dashboard-dialog" (click)="$event.stopPropagation()">
-        <div class="dashboard-dialog-header">
+    <div class="dashboard-dialog-backdrop orders-dialog-backdrop" (click)="closeOrderPreview()">
+      <div class="dashboard-dialog orders-dialog" (click)="$event.stopPropagation()">
+        <div class="dashboard-dialog-header orders-dialog-header">
           <div>
-            <p class="dashboard-page-eyebrow">Order</p>
+            <p class="dashboard-page-eyebrow">Order Preview</p>
             <h3>{{ order.orderCode }}</h3>
+            <span class="order-status-pill dialog-status" [class]="order.orderStatus">
+              {{ order.orderStatus }}
+            </span>
           </div>
-          <button type="button" class="dashboard-dialog-close" (click)="closeOrderPreview()">
+
+          <button
+            type="button"
+            class="dashboard-dialog-close orders-dialog-close"
+            (click)="closeOrderPreview()"
+          >
             ×
           </button>
         </div>
 
-        <div class="stat-list">
+        <div class="stat-list orders-preview-grid">
           <div>
             <span>Service</span>
             <strong>{{ order.serviceName }}</strong>
           </div>
+
           <div>
             <span>Account</span>
             <strong>{{ order.accountName }}</strong>
           </div>
+
           <div>
             <span>Phone</span>
             <strong>{{ order.mobileNumber }}</strong>
           </div>
+
           <div>
             <span>Total amount</span>
             <strong>{{ formatCurrency(order.totalAmount) }}</strong>
           </div>
+
           <div>
             <span>Registered date</span>
-            <strong>{{ order.registeredAt ? (order.registeredAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</strong>
+            <strong>{{
+              order.registeredAt ? (order.registeredAt | date: 'dd/MM/yyyy HH:mm') : '-'
+            }}</strong>
           </div>
+
           <div>
             <span>Order status</span>
             <strong class="table-capitalize">{{ order.orderStatus }}</strong>
           </div>
         </div>
 
-        <div class="dashboard-dialog-actions">
-          <button type="button" class="pagination-button" (click)="closeOrderPreview()">
+        <div class="dashboard-dialog-actions orders-dialog-actions">
+          <button
+            type="button"
+            class="pagination-button orders-page-button"
+            (click)="closeOrderPreview()"
+          >
             Close
           </button>
         </div>
@@ -192,4 +274,3 @@
     </div>
   }
 </section>
-
